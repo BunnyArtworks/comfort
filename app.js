@@ -20,6 +20,9 @@ const ratingNote = document.querySelector('.rating-note');
 const feedbackForm = document.querySelector('.feedback-form');
 const feedbackDone = document.querySelector('.feedback-done');
 const themeColor = document.querySelector('meta[name="theme-color"]');
+const mainSheetUnderlay = document.querySelector('.main-sheet-underlay');
+const feedbackSheetUnderlay = document.querySelector('.feedback-sheet-underlay');
+const weatherComment = document.querySelector('#weather-comment');
 
 const CURRENT_HOUR = 10;
 const HOUR_STEP = 43.333;
@@ -67,7 +70,7 @@ const conditions = {
     ]
   },
   bad: {
-    title: 'Дискомфортно из-за холода и ветра',
+    title: 'Дискомфортно из‑за\u00a0холода и ветра',
     copy: 'Если выход можно отложить, лучше выбрать время с 18:00 до 22:00',
     score: 48,
     scoreColor: '#ffa451',
@@ -266,6 +269,48 @@ function setBreakdownExpanded(expanded) {
   breakdownRows.setAttribute('aria-hidden', String(!expanded));
 }
 
+let overlayHideTimer = 0;
+function showOverlay(feedbackMode = false) {
+  clearTimeout(overlayHideTimer);
+  overlay.hidden = false;
+  overlay.classList.toggle('feedback-mode', feedbackMode);
+  requestAnimationFrame(() => overlay.classList.add('is-visible'));
+}
+
+function hideOverlay() {
+  clearTimeout(overlayHideTimer);
+  overlay.classList.remove('is-visible');
+  overlayHideTimer = window.setTimeout(() => {
+    if (!sheet.classList.contains('open') && !feedbackSheet.classList.contains('open')) overlay.hidden = true;
+  }, 440);
+}
+
+function updateSheetScrollMode() {
+  if (!sheet.classList.contains('open') || sheet.classList.contains('expanded')) {
+    sheetScroll.classList.remove('can-scroll');
+    return;
+  }
+  sheetScroll.classList.toggle('can-scroll', sheetScroll.scrollHeight > sheetScroll.clientHeight + 2);
+}
+
+function syncVisualViewport() {
+  const viewport = window.visualViewport;
+  const viewportHeight = viewport?.height ?? window.innerHeight;
+  const viewportTop = viewport?.offsetTop ?? 0;
+  const keyboardOpen = feedbackSheet.classList.contains('open') && window.innerHeight - viewportHeight > 120;
+
+  document.documentElement.style.setProperty('--visual-viewport-height', `${viewportHeight}px`);
+  document.documentElement.style.setProperty('--visual-viewport-top', `${viewportTop}px`);
+  document.documentElement.style.setProperty('--main-floor-top', `${Math.max(0, window.innerHeight - sheet.offsetHeight + 56)}px`);
+  document.body.classList.toggle('keyboard-open', keyboardOpen);
+
+  requestAnimationFrame(() => {
+    if (!feedbackSheet.classList.contains('open')) return;
+    const sheetTop = viewportTop + viewportHeight - feedbackSheet.offsetHeight;
+    document.documentElement.style.setProperty('--feedback-floor-top', `${Math.max(0, sheetTop + 56)}px`);
+  });
+}
+
 function openSheet() {
   selectedDay = 0;
   document.querySelectorAll('.days button').forEach(button => {
@@ -275,42 +320,58 @@ function openSheet() {
   setBreakdownExpanded(false);
   feedbackSheet.classList.remove('open');
   feedbackSheet.setAttribute('aria-hidden', 'true');
-  overlay.classList.remove('feedback-mode');
+  document.body.classList.remove('feedback-open', 'keyboard-open');
+  feedbackSheetUnderlay.classList.remove('is-visible');
   sheet.classList.add('open');
   sheet.setAttribute('aria-hidden', 'false');
-  overlay.hidden = false;
+  mainSheetUnderlay.classList.add('is-visible');
+  showOverlay(false);
   lockPageScroll();
   sheetScroll.scrollTop = 0;
   scoreGauge.classList.remove('is-animating');
   void scoreGauge.offsetWidth;
   scoreGauge.classList.add('is-animating');
+  syncVisualViewport();
+  requestAnimationFrame(updateSheetScrollMode);
 }
 
 function openFeedback() {
   feedbackSheet.classList.remove('submitted');
   feedbackSheet.classList.add('open');
   feedbackSheet.setAttribute('aria-hidden', 'false');
-  overlay.hidden = false;
-  overlay.classList.add('feedback-mode');
+  document.body.classList.add('feedback-open');
+  feedbackSheetUnderlay.classList.add('is-visible');
+  showOverlay(true);
   lockPageScroll();
+  syncVisualViewport();
 }
 
 function closeFeedback() {
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   feedbackSheet.classList.remove('open');
   feedbackSheet.setAttribute('aria-hidden', 'true');
-  overlay.classList.remove('feedback-mode');
-  overlay.hidden = !sheet.classList.contains('open');
-  if (!sheet.classList.contains('open')) unlockPageScroll();
+  document.body.classList.remove('feedback-open', 'keyboard-open');
+  feedbackSheetUnderlay.classList.remove('is-visible');
+  if (sheet.classList.contains('open')) showOverlay(false);
+  else {
+    mainSheetUnderlay.classList.remove('is-visible');
+    hideOverlay();
+    unlockPageScroll();
+  }
 }
 
 function closeSheet() {
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   setBreakdownExpanded(false);
   sheet.classList.remove('open');
   sheet.setAttribute('aria-hidden', 'true');
   feedbackSheet.classList.remove('open');
   feedbackSheet.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('feedback-open', 'keyboard-open');
+  mainSheetUnderlay.classList.remove('is-visible');
+  feedbackSheetUnderlay.classList.remove('is-visible');
   overlay.classList.remove('feedback-mode');
-  overlay.hidden = true;
+  hideOverlay();
   unlockPageScroll();
 }
 
@@ -332,6 +393,7 @@ breakdownToggle.addEventListener('click', () => {
   const willExpand = !sheet.classList.contains('expanded');
   setBreakdownExpanded(willExpand);
   if (!willExpand) sheetScroll.scrollTo({ top: 0, behavior: 'smooth' });
+  requestAnimationFrame(updateSheetScrollMode);
 });
 
 document.querySelector('.rating-dislike').addEventListener('click', () => {
@@ -383,11 +445,57 @@ function updateFeeling() {
 
 feelingRange.addEventListener('input', updateFeeling);
 feelingRange.addEventListener('change', updateFeeling);
-window.addEventListener('resize', updateFeeling);
+let feelingPointerId = null;
+function updateFeelingFromPointer(event) {
+  const rect = feelingSlider.getBoundingClientRect();
+  const thumbRadius = 28;
+  const usableWidth = Math.max(1, rect.width - thumbRadius * 2);
+  const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left - thumbRadius) / usableWidth));
+  const nextValue = String(Math.round(ratio * 3));
+  if (feelingRange.value === nextValue) return;
+  feelingRange.value = nextValue;
+  updateFeeling();
+  feelingRange.dispatchEvent(new Event('change', { bubbles: true }));
+}
+feelingSlider.addEventListener('pointerdown', event => {
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  feelingPointerId = event.pointerId;
+  feelingSlider.classList.add('dragging');
+  feelingSlider.setPointerCapture(event.pointerId);
+  updateFeelingFromPointer(event);
+  event.preventDefault();
+});
+feelingSlider.addEventListener('pointermove', event => {
+  if (event.pointerId !== feelingPointerId) return;
+  updateFeelingFromPointer(event);
+  event.preventDefault();
+});
+function finishFeelingPointer(event) {
+  if (event.pointerId !== feelingPointerId) return;
+  if (feelingSlider.hasPointerCapture(event.pointerId)) feelingSlider.releasePointerCapture(event.pointerId);
+  feelingPointerId = null;
+  feelingSlider.classList.remove('dragging');
+}
+feelingSlider.addEventListener('pointerup', finishFeelingPointer);
+feelingSlider.addEventListener('pointercancel', finishFeelingPointer);
+window.addEventListener('resize', () => {
+  updateFeeling();
+  updateSheetScrollMode();
+  syncVisualViewport();
+});
+window.visualViewport?.addEventListener('resize', syncVisualViewport);
+window.visualViewport?.addEventListener('scroll', syncVisualViewport);
+weatherComment.addEventListener('focus', () => window.setTimeout(syncVisualViewport, 120));
+weatherComment.addEventListener('blur', () => window.setTimeout(syncVisualViewport, 80));
+if ('ResizeObserver' in window) new ResizeObserver(updateSheetScrollMode).observe(sheetScroll);
+document.fonts?.ready.then(updateSheetScrollMode);
 feedbackForm.addEventListener('submit', event => {
   event.preventDefault();
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  document.body.classList.remove('keyboard-open');
   setReaction('dislike');
   feedbackSheet.classList.add('submitted');
+  window.setTimeout(syncVisualViewport, 80);
 });
 feedbackDone.addEventListener('click', closeFeedback);
 
@@ -423,6 +531,7 @@ function attachDismissGesture(panel, closePanel) {
 
   handle.addEventListener('pointerdown', event => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     clearTimeout(settleTimer);
     active = true;
     startY = event.clientY;
@@ -474,7 +583,8 @@ let dimFrame = 0;
 function updateBackgroundDim() {
   cancelAnimationFrame(dimFrame);
   dimFrame = requestAnimationFrame(() => {
-    const dim = Math.min((window.scrollY / 1800) * .18, .18);
+    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+    const dim = Math.min(Math.max(scrollTop - 64, 0) / 720 * .24, .24);
     app.style.setProperty('--bg-dim', dim.toFixed(3));
   });
 }
