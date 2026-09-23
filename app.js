@@ -19,11 +19,27 @@ const summary = document.querySelector('.summary');
 const ratingNote = document.querySelector('.rating-note');
 const feedbackForm = document.querySelector('.feedback-form');
 const feedbackDone = document.querySelector('.feedback-done');
+const themeColor = document.querySelector('meta[name="theme-color"]');
 
 const CURRENT_HOUR = 10;
 const HOUR_STEP = 43.333;
 let condition = 'good';
 let selectedDay = 0;
+let lockedScrollY = 0;
+
+function lockPageScroll() {
+  if (document.body.classList.contains('is-scroll-locked')) return;
+  lockedScrollY = window.scrollY;
+  document.body.style.top = `-${lockedScrollY}px`;
+  document.body.classList.add('is-scroll-locked');
+}
+
+function unlockPageScroll() {
+  if (!document.body.classList.contains('is-scroll-locked')) return;
+  document.body.classList.remove('is-scroll-locked');
+  document.body.style.removeProperty('top');
+  window.scrollTo(0, lockedScrollY);
+}
 
 const conditions = {
   good: {
@@ -86,12 +102,12 @@ const fullDays = [
 
 const chartCopy = [
   () => condition === 'good'
-    ? 'Комфортно сейчас и с 20:00; хуже всего с 15:00 до 16:00'
-    : 'Комфортнее всего с 18:00 до 20:00; хуже всего около 14:00',
-  () => 'Комфортно до 8:00 и с 21:00; хуже всего около 15:00',
-  () => 'Самое комфортное время — с 10:00 до 14:00',
-  () => 'Комфортно с 1:00 до 6:00 и после 22:00; хуже всего около 15:00',
-  () => 'Самое комфортное время — с 8:00 до 12:00'
+    ? 'Лучше выйти сейчас или после 20:00'
+    : 'Лучше выйти с 18:00 до 20:00',
+  () => 'Комфортно до 8:00 и после 21:00',
+  () => 'Лучше выйти с 10:00 до 14:00',
+  () => 'Комфортно с 1:00 до 6:00 и после 22:00',
+  () => 'Лучше выйти с 8:00 до 12:00'
 ];
 
 const colorHex = {
@@ -202,6 +218,7 @@ function renderCondition() {
   const data = conditions[condition];
   app.dataset.condition = condition;
   document.body.dataset.condition = condition;
+  themeColor.setAttribute('content', condition === 'good' ? '#3e8cdd' : '#355992');
   scoreValue.textContent = data.score;
   scoreGauge.setAttribute('aria-label', `${data.score} из 100`);
   scoreGauge.style.setProperty('--score-color', data.scoreColor);
@@ -262,8 +279,11 @@ function openSheet() {
   sheet.classList.add('open');
   sheet.setAttribute('aria-hidden', 'false');
   overlay.hidden = false;
-  document.body.style.overflow = 'hidden';
+  lockPageScroll();
   sheetScroll.scrollTop = 0;
+  scoreGauge.classList.remove('is-animating');
+  void scoreGauge.offsetWidth;
+  scoreGauge.classList.add('is-animating');
 }
 
 function openFeedback() {
@@ -272,7 +292,7 @@ function openFeedback() {
   feedbackSheet.setAttribute('aria-hidden', 'false');
   overlay.hidden = false;
   overlay.classList.add('feedback-mode');
-  document.body.style.overflow = 'hidden';
+  lockPageScroll();
 }
 
 function closeFeedback() {
@@ -280,7 +300,7 @@ function closeFeedback() {
   feedbackSheet.setAttribute('aria-hidden', 'true');
   overlay.classList.remove('feedback-mode');
   overlay.hidden = !sheet.classList.contains('open');
-  if (!sheet.classList.contains('open')) document.body.style.overflow = '';
+  if (!sheet.classList.contains('open')) unlockPageScroll();
 }
 
 function closeSheet() {
@@ -291,7 +311,7 @@ function closeSheet() {
   feedbackSheet.setAttribute('aria-hidden', 'true');
   overlay.classList.remove('feedback-mode');
   overlay.hidden = true;
-  document.body.style.overflow = '';
+  unlockPageScroll();
 }
 
 document.querySelectorAll('.mascot-toggle').forEach(button => button.addEventListener('click', toggleCondition));
@@ -381,15 +401,74 @@ document.addEventListener('keydown', event => {
   else closeSheet();
 });
 
-let pointerStart = 0;
-sheet.addEventListener('pointerdown', event => { pointerStart = event.clientY; });
-sheet.addEventListener('pointerup', event => {
-  if (event.clientY - pointerStart > 90 && sheetScroll.scrollTop === 0) closeSheet();
+['gesturestart', 'gesturechange', 'gestureend'].forEach(eventName => {
+  document.addEventListener(eventName, event => event.preventDefault(), { passive: false });
 });
-feedbackSheet.addEventListener('pointerdown', event => { pointerStart = event.clientY; });
-feedbackSheet.addEventListener('pointerup', event => {
-  if (event.clientY - pointerStart > 90) closeFeedback();
-});
+document.addEventListener('dblclick', event => event.preventDefault(), { passive: false });
+
+function clearPanelDrag(panel) {
+  panel.classList.remove('dragging');
+  panel.style.removeProperty('transition');
+  panel.style.removeProperty('transform');
+  overlay.style.removeProperty('opacity');
+}
+
+function attachDismissGesture(panel, closePanel) {
+  const handle = panel.querySelector('.grabber');
+  let active = false;
+  let startY = 0;
+  let distance = 0;
+  let startedAt = 0;
+  let settleTimer = 0;
+
+  handle.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    clearTimeout(settleTimer);
+    active = true;
+    startY = event.clientY;
+    distance = 0;
+    startedAt = performance.now();
+    panel.classList.add('dragging');
+    handle.setPointerCapture(event.pointerId);
+  });
+
+  handle.addEventListener('pointermove', event => {
+    if (!active) return;
+    distance = Math.max(0, event.clientY - startY);
+    panel.style.transform = `translate(-50%, ${distance}px)`;
+    overlay.style.opacity = String(Math.max(.38, 1 - distance / 360));
+    event.preventDefault();
+  });
+
+  const finish = event => {
+    if (!active) return;
+    active = false;
+    if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+    const duration = Math.max(1, performance.now() - startedAt);
+    const dismiss = distance > 64 || (distance > 28 && distance / duration > .42);
+    panel.classList.remove('dragging');
+    overlay.style.removeProperty('opacity');
+    panel.style.transition = 'transform .2s cubic-bezier(.2,.8,.2,1)';
+
+    if (dismiss) {
+      panel.style.transform = 'translate(-50%, 110%)';
+      settleTimer = window.setTimeout(() => {
+        clearPanelDrag(panel);
+        closePanel();
+      }, 190);
+      return;
+    }
+
+    panel.style.transform = 'translate(-50%, 0)';
+    settleTimer = window.setTimeout(() => clearPanelDrag(panel), 210);
+  };
+
+  handle.addEventListener('pointerup', finish);
+  handle.addEventListener('pointercancel', finish);
+}
+
+attachDismissGesture(sheet, closeSheet);
+attachDismissGesture(feedbackSheet, closeFeedback);
 
 let dimFrame = 0;
 function updateBackgroundDim() {
