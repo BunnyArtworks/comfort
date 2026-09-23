@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Погода — индекс комфортности</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="phone" id="app" data-condition="good">
+    <section class="weather-screen" aria-label="Главный экран погоды">
+      <div class="map-shell" aria-hidden="true">
+        <div class="map-surface">
+          <img class="map-source" src="assets/map-source-retina.png" alt="">
+          <i class="map-tint"></i>
+        </div>
+        <div class="map-controls">
+          <span class="map-settings"><img src="assets/map-settings.svg" alt=""></span>
+          <span class="map-search"><img src="assets/map-search.svg" alt=""><b>район Басманный</b><img src="assets/map-location.svg" alt=""></span>
+        </div>
+        <span class="map-pin"><img src="assets/map-pin.svg" alt=""></span>
+        <span class="map-button">Погода<br>на карте</span>
+      </div>
+      <div class="status-bar" aria-hidden="true">
+        <span>12:30</span>
+        <div class="status-icons">
+          <i class="vibro-icon"></i>
+          <img src="assets/status-wifi.svg" alt="">
+          <img src="assets/status-signal.svg" alt="">
+          <img src="assets/status-battery.svg" alt="">
+        </div>
+      </div>
+      <img class="art hero-art good-only" src="assets/hero-content.svg?v=3" alt="">
+      <img class="art hero-art bad-only" src="assets/hero-content-bad.svg?v=3" alt="">
+
+      <button class="hotspot speech-entry" data-open="compact" aria-label="Открыть индекс комфортности из реплики"></button>
+
+      <button class="mascot-toggle mascot-good" aria-label="Переключить на неблагоприятные условия">
+        <img src="assets/mascot-good-figma.svg" alt="Солнечный персонаж">
+      </button>
+      <button class="mascot-toggle mascot-bad" aria-label="Переключить на комфортные условия">
+        <img src="assets/mascot-bad-figma.svg" alt="Тучка с каплями">
+      </button>
+
+      <div class="current-description">
+        <div class="current-condition">
+          <strong id="current-condition">Ясно</strong>
+          <span class="report-control" role="group" aria-label="Погода описана верно?">
+            <img src="assets/report-control-clean.svg" alt="">
+            <i class="report-fluid" aria-hidden="true"></i>
+            <button type="button" data-report="yes" aria-pressed="false">Да</button>
+            <button type="button" data-report="no" aria-pressed="false">Нет</button>
+          </span>
+        </div>
+        <p id="current-condition-copy">Дождь начнётся около 11:00</p>
+      </div>
+
+      <div class="main-carousel suggestions-carousel" aria-label="Подсказки о погоде">
+        <div class="suggestions-track">
+          <button type="button">Что надеть?</button>
+          <button type="button">Когда включат отопление?</button>
+          <button type="button" class="alice-suggestion"><img src="assets/icon-alice-figma.svg" alt="">Алиса AI</button>
+        </div>
+      </div>
+
+      <div class="main-carousel hourly-carousel" aria-label="Почасовой прогноз">
+        <div class="hourly-track" id="main-hourly-track"></div>
+      </div>
+      <img class="art ad-art" src="assets/ad-small.svg" alt="">
+      <div class="main-carousel cards-carousel" aria-label="Параметры погоды">
+        <div class="cards-track" id="parameter-cards">
+          <button class="parameter-card comfort-card" data-open="compact" aria-label="Открыть индекс комфортности из карточки">
+            <span class="mini-score">
+              <span class="figma-gauge-crop gauge-score-good" aria-hidden="true"><img src="assets/parameter-cards.svg" alt=""></span>
+              <svg class="mini-score-dynamic" viewBox="0 0 72 72" aria-hidden="true">
+                <circle class="mini-score-track" cx="36" cy="36" r="34.256"></circle>
+                <circle class="mini-score-progress" cx="36" cy="36" r="34.256" pathLength="100"></circle>
+              </svg>
+              <b class="mini-score-dynamic" id="main-score">96</b>
+            </span>
+            <span class="card-copy"><strong id="main-score-title">На улице сейчас комфортно</strong><small id="main-score-copy">После 11:00 погода существенно ухудшится</small></span>
+          </button>
+          <article class="parameter-card">
+            <span class="exact-wind-gauge" aria-hidden="true"><img src="assets/parameter-wind-exact.svg" alt=""></span>
+            <span class="card-copy"><strong>Сильный ветер 3 м/с</strong><small>Порывы до 5 м/с</small></span>
+          </article>
+          <article class="parameter-card">
+            <img class="parameter-icon humidity-icon" src="assets/parameter-humidity.svg" alt="">
+            <span class="card-copy"><strong>Умеренная влажность 40%</strong><small>Вечером до 80%</small></span>
+          </article>
+          <article class="parameter-card">
+            <img class="parameter-icon" src="assets/parameter-allergy.svg" alt="">
+            <span class="card-copy"><strong>Возможна аллергия</strong><small>Берёза, ольха +2</small></span>
+          </article>
+          <article class="parameter-card">
+            <span class="dial-gauge" aria-hidden="true">
+              <span class="gauge-rotator"><span class="gauge-inner"><img class="gauge-ring" src="assets/gauge-uv-arc.svg" alt=""><img class="gauge-fill" src="assets/gauge-uv-fill.png" alt=""></span></span>
+              <img class="gauge-dot" src="assets/gauge-uv-dot.svg" alt=""><b>8</b><small>УФ</small>
+            </span>
+            <span class="card-copy"><strong>УФ-индекс высокий</strong><small>Используйте защиту</small></span>
+          </article>
+          <article class="parameter-card">
+            <span class="dial-gauge pressure" aria-hidden="true">
+              <span class="pressure-segment pressure-segment-a"><span><img src="assets/gauge-pressure-a.svg" alt=""></span></span>
+              <span class="pressure-segment pressure-segment-b"><span><img src="assets/gauge-pressure-b.svg" alt=""></span></span>
+              <span class="pressure-segment pressure-segment-c"><span><img src="assets/gauge-pressure-c.svg" alt=""></span></span>
+              <img class="gauge-dot" src="assets/gauge-pressure-dot.svg" alt=""><b>760</b><small>мм рт. ст.</small>
+            </span>
+            <span class="card-copy"><strong>Давление в норме</strong><small>Повысится вечером</small></span>
+          </article>
+          <article class="parameter-card">
+            <span class="dial-gauge" aria-hidden="true">
+              <span class="gauge-rotator"><span class="gauge-inner"><img class="gauge-ring" src="assets/gauge-storm-arc.svg" alt=""><img class="gauge-fill" src="assets/gauge-storm-fill.png" alt=""></span></span>
+              <img class="gauge-dot" src="assets/gauge-storm-dot.svg" alt=""><b>7</b><small>Кр</small>
+            </span>
+            <span class="card-copy"><strong>Сильная магнитная буря</strong><small>Успокоится к 21:00</small></span>
+          </article>
+          <article class="parameter-card moon-card">
+            <span class="moon-gauge" aria-hidden="true"><i><img src="assets/moon-fill.svg" alt=""></i></span>
+            <span class="card-copy"><strong>Растущая луна</strong><small>Полнолуние 21 августа</small></span>
+          </article>
+          <article class="parameter-card water-card">
+            <span class="dial-gauge water" aria-hidden="true">
+              <span class="gauge-rotator"><span class="gauge-inner"><img class="gauge-ring" src="assets/gauge-water-ring.svg" alt=""><img class="gauge-fill" src="assets/gauge-water-fill.png" alt=""></span></span>
+              <img class="gauge-dot" src="assets/gauge-water-dot.svg" alt=""><b>20°</b><img class="water-icon" src="assets/gauge-water-icon.svg" alt="">
+            </span>
+            <span class="card-copy"><strong>Вода тёплая</strong><small>Финский залив</small></span>
+          </article>
+        </div>
+      </div>
+      <img class="art forecast-art" src="assets/forecast.svg" alt="Прогноз по дням">
+    </section>
+
+    <div class="overlay" hidden></div>
+    <aside class="sheet" aria-hidden="true" aria-label="Индекс комфортности">
+      <div class="grabber"></div>
+      <div class="sheet-scroll">
+        <section class="summary">
+          <div class="score-gauge" id="score-gauge" role="img" aria-label="96 из 100">
+            <span class="score-exact score-exact-good" aria-hidden="true">
+              <img src="assets/score-track-figma.svg" alt="">
+              <img src="assets/score-96-figma.svg" alt="">
+            </span>
+            <svg class="score-dynamic" viewBox="0 0 108 108" aria-hidden="true">
+              <circle class="score-track" cx="54" cy="54" r="50"></circle>
+              <circle class="score-progress" cx="54" cy="54" r="50" pathLength="100"></circle>
+            </svg>
+            <span id="score-value">96</span>
+            <small>из 100</small>
+          </div>
+          <div class="rating-control">
+            <img src="assets/rating.svg" alt="">
+            <span class="rating-selection" aria-hidden="true"><img src="assets/rating.svg" alt=""></span>
+            <button type="button" class="rating-like" aria-label="Погода описана верно"></button>
+            <button type="button" class="rating-dislike" aria-label="Дать свою оценку погоде"></button>
+          </div>
+          <span class="rating-note" aria-live="polite"></span>
+          <h1 id="sheet-title">На улице комфортно</h1>
+          <p id="sheet-copy">Сейчас и до 11:00 наиболее подходящее время для выхода на улицу</p>
+        </section>
+
+        <section class="breakdown" id="breakdown" aria-expanded="false">
+          <div class="breakdown-rows" aria-hidden="true">
+            <div><b>Ощущается как</b><span id="feels-value">22° <img src="assets/status-green.svg" alt=""></span></div>
+            <div><b>Ветер</b><span id="wind-value">3 м/с <img src="assets/status-yellow.svg" alt=""></span></div>
+            <div><b>Осадки</b><span id="rain-value">отсутствуют <img src="assets/status-green.svg" alt=""></span></div>
+            <div><b>УФ-индекс</b><span id="uv-value">2, низкий <img src="assets/status-green.svg" alt=""></span></div>
+            <div><b>Погодные опасности</b><span id="danger-value">нет <img src="assets/status-green.svg" alt=""></span></div>
+          </div>
+          <button class="breakdown-toggle" id="breakdown-toggle">
+            <span class="breakdown-open-label">Из чего складывается оценка <img src="assets/chevron-down.svg" alt=""></span>
+            <span class="breakdown-close-label">Свернуть <img src="assets/chevron-up.svg" alt=""></span>
+          </button>
+        </section>
+
+        <nav class="days" aria-label="Дни прогноза">
+          <button class="active" data-day="0">Сегодня<span class="strip"></span></button>
+          <button data-day="1">Завтра<span class="strip"></span></button>
+          <button data-day="2">Ср, 14<span class="strip"></span></button>
+          <button data-day="3">Чт, 15<span class="strip"></span></button>
+          <button data-day="4">Пт, 16<span class="strip"></span></button>
+        </nav>
+
+        <section class="chart-card">
+          <p id="chart-copy">Комфортно до 11:00, после этого условия ухудшатся из-за грозы до 21:00</p>
+          <div class="plot-scroll" id="plot-scroll" tabindex="0" aria-label="Почасовой график комфортности">
+            <div class="plot" id="plot">
+              <div class="bars" id="bars"></div>
+              <div class="times" id="times"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="legend" aria-label="Легенда индекса">
+          <span><i class="green"></i>80–100, комфортно</span>
+          <span><i class="yellow"></i>50–79, нормально</span>
+          <span><i class="orange"></i>30–49, дискомфортно</span>
+          <span><i class="red"></i>0–29, очень дискомфортно</span>
+        </section>
+      </div>
+    </aside>
+
+    <aside class="feedback-sheet" aria-hidden="true" aria-label="Оценка погоды">
+      <div class="grabber"></div>
+      <form class="feedback-form">
+        <h2>А как вы ощущаете<br>погоду сейчас?</h2>
+        <div class="feeling-control">
+          <strong id="feeling-label">Дискомфортно</strong>
+          <div class="feeling-slider" id="feeling-slider">
+            <div class="feeling-track"></div>
+            <div class="feeling-fill"></div>
+            <div class="feeling-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <input id="feeling-range" type="range" min="0" max="3" step="1" value="1" aria-label="Насколько комфортно ощущается погода">
+          </div>
+        </div>
+        <textarea id="weather-comment" rows="2" placeholder="Если хотите — расскажите, почему так"></textarea>
+        <button class="feedback-submit" type="submit">Отправить</button>
+      </form>
+      <section class="feedback-success" aria-live="polite">
+        <span class="success-mark" aria-hidden="true">✓</span>
+        <h2>Спасибо!</h2>
+        <p>Учтём вашу оценку и постараемся точнее описывать погоду.</p>
+        <button class="feedback-done" type="button">Готово</button>
+      </section>
+    </aside>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

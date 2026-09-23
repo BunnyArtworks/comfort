@@ -1,0 +1,16 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="76.6093" height="88.8571" viewBox="0 0 76.6093 88.8571" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Waxing gibbous" filter="url(#filter0_f_0_7)">
+<path d="M44.4286 8C50.0678 8 55.4075 9.28187 60.173 11.5693C63.9749 18.4461 68.6092 29.822 68.6093 44.4286C68.6093 59.0346 63.9748 70.4101 60.173 77.287C55.4075 79.5745 50.0679 80.8571 44.4286 80.8571C24.3096 80.8571 8 64.5475 8 44.4286C8 24.3096 24.3096 8 44.4286 8Z" fill="url(#paint0_linear_0_7)"/>
+</g>
+<defs>
+<filter id="filter0_f_0_7" x="0" y="0" width="76.6093" height="88.8571" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="4" result="effect1_foregroundBlur_0_7"/>
+</filter>
+<linearGradient id="paint0_linear_0_7" x1="38.3046" y1="8" x2="38.3046" y2="80.8571" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F3FEFF"/>
+<stop offset="1" stop-color="#E6E7FF"/>
+</linearGradient>
+</defs>
+</svg>
