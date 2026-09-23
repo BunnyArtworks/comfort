@@ -49,9 +49,10 @@
 html, body { margin: 0; min-height: 100%; touch-action: pan-x pan-y; }
 html {
   min-height: 100dvh;
-  background: #3e8cdd;
+  background: #3e8cdd url("assets/main-bg-source.png") center / cover fixed no-repeat;
   overscroll-behavior-y: none;
 }
+html[data-condition="bad"] { background-color: #355992; background-image: url("assets/main-bg-rain.png"); }
 body {
   font-family: "YS Text", "Arial", sans-serif;
   font-feature-settings: "lnum" 1, "pnum" 1;
@@ -59,10 +60,9 @@ body {
   font-synthesis: none;
   color: var(--ink);
   min-height: 100dvh;
-  background: #3e8cdd url("assets/main-bg-source.png") center / cover no-repeat;
+  background: transparent;
   overscroll-behavior-y: none;
 }
-body[data-condition="bad"] { background-color: #355992; background-image: url("assets/main-bg-rain.png"); }
 body.is-scroll-locked {
   position: fixed;
   right: 0;
@@ -129,7 +129,7 @@ textarea,
   background-position: center top;
 }
 .weather-screen::after {
-  z-index: 1;
+  z-index: 3;
   background: #11182d;
   opacity: var(--bg-dim);
   transition: opacity .12s linear;
@@ -656,44 +656,26 @@ textarea,
   transition: opacity .42s cubic-bezier(.22,.8,.2,1), visibility 0s linear .42s, background-color .24s ease;
 }
 .overlay.is-visible { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
-.sheet-underlay {
-  position: fixed;
-  left: 50%;
-  width: min(100%, 640px);
-  bottom: -100dvh;
-  transform: translateX(-50%);
-  background: #fff;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .3s ease;
-}
-.sheet-underlay.is-visible { opacity: 1; }
-.main-sheet-underlay {
-  z-index: 20;
-  top: var(--main-floor-top, calc(max(32px, 100dvh - 756px) + 56px));
-}
-.feedback-sheet-underlay {
-  z-index: 22;
-  top: var(--feedback-floor-top, calc(100dvh - 404px));
-}
-
 .sheet {
+  --sheet-visible-height: min(756px, calc(100dvh - 32px));
   position: fixed;
   z-index: 21;
   left: 50%;
-  bottom: 0;
+  bottom: -100dvh;
   width: min(100%, 640px);
-  height: min(756px, calc(100dvh - 32px));
-  transform: translate(-50%, 105%);
+  height: calc(var(--sheet-visible-height) + 100dvh);
+  transform: translate(-50%, calc(var(--sheet-visible-height) + 64px));
   border-radius: 56px 56px 0 0;
   background: #fff;
   overflow: hidden;
   transition: transform .42s cubic-bezier(.2, .8, .2, 1), height .42s cubic-bezier(.2, .8, .2, 1);
 }
-.sheet.expanded { height: calc(100dvh - 32px); }
+.sheet.expanded { --sheet-visible-height: calc(100dvh - 32px); }
 .sheet.open { transform: translate(-50%, 0); }
+.sheet:not(.open),
+.feedback-sheet:not(.open) { pointer-events: none; }
 .sheet-scroll {
-  height: 100%;
+  height: var(--sheet-visible-height);
   padding: 24px 0 calc(20px + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1009,23 +991,20 @@ textarea,
 .legend i { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; }
 
 .feedback-sheet {
+  --feedback-visible-height: calc(460px + env(safe-area-inset-bottom, 0px));
   position: fixed;
   z-index: 23;
   left: 50%;
-  bottom: 0;
+  bottom: -100dvh;
   width: min(100%, 640px);
-  height: var(--feedback-sheet-height, calc(460px + env(safe-area-inset-bottom, 0px)));
-  transform: translate(-50%, 105%);
+  height: calc(var(--feedback-visible-height) + 100dvh);
+  transform: translate(-50%, calc(var(--feedback-visible-height) + 64px));
   border-radius: 56px 56px 0 0;
   background: #fff;
   overflow: hidden;
-  transition: transform .42s cubic-bezier(.2,.8,.2,1), top .2s ease;
+  transition: transform .42s cubic-bezier(.2,.8,.2,1);
 }
 .feedback-sheet.open { transform: translate(-50%, 0); }
-.keyboard-open .feedback-sheet.open {
-  top: calc(var(--visual-viewport-top, 0px) + var(--visual-viewport-height, 100dvh) - var(--feedback-sheet-height, 460px));
-  bottom: auto;
-}
 .overlay.feedback-mode { z-index: 22; background: rgba(38,52,82,.66); }
 .feedback-form { display: flex; height: calc(412px + env(safe-area-inset-bottom, 0px)); flex-direction: column; gap: 16px; padding: 24px 24px env(safe-area-inset-bottom, 0px); }
 .feedback-form h2 { margin: 8px 4px 8px; text-align: center; font-size: 28px; font-weight: 800; line-height: 1.18; letter-spacing: -.2px; }
@@ -1059,7 +1038,7 @@ textarea,
 .feedback-submit { height: 52px; margin-top: 8px; flex: 0 0 52px; border-radius: 26px; color: #fff; background: var(--ink); font-weight: 500; }
 .feedback-success {
   display: none;
-  height: 100%;
+  height: var(--feedback-visible-height);
   flex-direction: column;
   align-items: center;
   padding: 68px 24px calc(48px + env(safe-area-inset-bottom, 0px));
@@ -1122,12 +1101,32 @@ textarea,
 }
 
 @media (max-width: 375px) and (min-height: 760px) {
-  .sheet { height: min(784px, calc(100dvh - 16px)); }
+  .sheet { --sheet-visible-height: min(784px, calc(100dvh - 16px)); }
 }
 
-@media (hover: none) and (pointer: coarse) {
+@media (max-width: 699px) {
+  .weather-screen {
+    --mobile-top-shift: calc(env(safe-area-inset-top, 0px) - 48px);
+    height: calc(451.65cqw + var(--mobile-top-shift));
+    aspect-ratio: auto;
+  }
   .status-bar { display: none; }
+  .weather-screen::before { display: none; }
+  .weather-screen::after { top: -160px; height: calc(100dvh + 320px); }
+  .map-shell { height: calc(49.36cqw + var(--mobile-top-shift)); }
+  .map-surface { height: calc(52.16cqw + var(--mobile-top-shift)); }
   .map-controls { top: calc(env(safe-area-inset-top, 0px) + 10px); }
+  .map-pin { top: calc(32.06cqw + var(--mobile-top-shift)); }
+  .map-button { top: calc(27.99cqw + var(--mobile-top-shift)); }
+  .hero-art, .speech-entry { top: calc(52.42cqw + var(--mobile-top-shift)); }
+  .ad-art { top: calc(156.23cqw + var(--mobile-top-shift)); }
+  .forecast-art { top: calc(242.49cqw + var(--mobile-top-shift)); }
+  .suggestions-carousel { top: calc(111.45cqw + var(--mobile-top-shift)); }
+  .hourly-carousel { top: calc(124.68cqw + var(--mobile-top-shift)); }
+  .cards-carousel { top: calc(193.64cqw + var(--mobile-top-shift)); }
+  .mascot-good { top: calc(10.43cqw + var(--mobile-top-shift)); }
+  .mascot-bad { top: calc(21.88cqw + var(--mobile-top-shift)); }
+  .current-description { top: calc(92.11cqw + var(--mobile-top-shift)); }
   button:focus,
   a:focus,
   input:focus { outline: none; }

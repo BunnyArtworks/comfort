@@ -20,8 +20,6 @@ const ratingNote = document.querySelector('.rating-note');
 const feedbackForm = document.querySelector('.feedback-form');
 const feedbackDone = document.querySelector('.feedback-done');
 const themeColor = document.querySelector('meta[name="theme-color"]');
-const mainSheetUnderlay = document.querySelector('.main-sheet-underlay');
-const feedbackSheetUnderlay = document.querySelector('.feedback-sheet-underlay');
 const weatherComment = document.querySelector('#weather-comment');
 
 const CURRENT_HOUR = 10;
@@ -221,7 +219,10 @@ function renderCondition() {
   const data = conditions[condition];
   app.dataset.condition = condition;
   document.body.dataset.condition = condition;
-  themeColor.setAttribute('content', condition === 'good' ? '#3e8cdd' : '#355992');
+  document.documentElement.dataset.condition = condition;
+  const pageColor = condition === 'good' ? '#3e8cdd' : '#355992';
+  themeColor.setAttribute('content', pageColor);
+  document.documentElement.style.backgroundColor = pageColor;
   scoreValue.textContent = data.score;
   scoreGauge.setAttribute('aria-label', `${data.score} из 100`);
   scoreGauge.style.setProperty('--score-color', data.scoreColor);
@@ -293,24 +294,6 @@ function updateSheetScrollMode() {
   sheetScroll.classList.toggle('can-scroll', sheetScroll.scrollHeight > sheetScroll.clientHeight + 2);
 }
 
-function syncVisualViewport() {
-  const viewport = window.visualViewport;
-  const viewportHeight = viewport?.height ?? window.innerHeight;
-  const viewportTop = viewport?.offsetTop ?? 0;
-  const keyboardOpen = feedbackSheet.classList.contains('open') && window.innerHeight - viewportHeight > 120;
-
-  document.documentElement.style.setProperty('--visual-viewport-height', `${viewportHeight}px`);
-  document.documentElement.style.setProperty('--visual-viewport-top', `${viewportTop}px`);
-  document.documentElement.style.setProperty('--main-floor-top', `${Math.max(0, window.innerHeight - sheet.offsetHeight + 56)}px`);
-  document.body.classList.toggle('keyboard-open', keyboardOpen);
-
-  requestAnimationFrame(() => {
-    if (!feedbackSheet.classList.contains('open')) return;
-    const sheetTop = viewportTop + viewportHeight - feedbackSheet.offsetHeight;
-    document.documentElement.style.setProperty('--feedback-floor-top', `${Math.max(0, sheetTop + 56)}px`);
-  });
-}
-
 function openSheet() {
   selectedDay = 0;
   document.querySelectorAll('.days button').forEach(button => {
@@ -320,56 +303,54 @@ function openSheet() {
   setBreakdownExpanded(false);
   feedbackSheet.classList.remove('open');
   feedbackSheet.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('feedback-open', 'keyboard-open');
-  feedbackSheetUnderlay.classList.remove('is-visible');
+  document.body.classList.remove('feedback-open');
   sheet.classList.add('open');
   sheet.setAttribute('aria-hidden', 'false');
-  mainSheetUnderlay.classList.add('is-visible');
   showOverlay(false);
   lockPageScroll();
   sheetScroll.scrollTop = 0;
   scoreGauge.classList.remove('is-animating');
   void scoreGauge.offsetWidth;
   scoreGauge.classList.add('is-animating');
-  syncVisualViewport();
   requestAnimationFrame(updateSheetScrollMode);
 }
 
 function openFeedback() {
+  suppressCommentFocusUntil = 0;
   feedbackSheet.classList.remove('submitted');
   feedbackSheet.classList.add('open');
   feedbackSheet.setAttribute('aria-hidden', 'false');
   document.body.classList.add('feedback-open');
-  feedbackSheetUnderlay.classList.add('is-visible');
   showOverlay(true);
   lockPageScroll();
-  syncVisualViewport();
+}
+
+let suppressCommentFocusUntil = 0;
+function dismissCommentKeyboard() {
+  suppressCommentFocusUntil = performance.now() + 700;
+  weatherComment.blur();
 }
 
 function closeFeedback() {
-  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  dismissCommentKeyboard();
   feedbackSheet.classList.remove('open');
   feedbackSheet.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('feedback-open', 'keyboard-open');
-  feedbackSheetUnderlay.classList.remove('is-visible');
+  document.body.classList.remove('feedback-open');
   if (sheet.classList.contains('open')) showOverlay(false);
   else {
-    mainSheetUnderlay.classList.remove('is-visible');
     hideOverlay();
     unlockPageScroll();
   }
 }
 
 function closeSheet() {
-  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  dismissCommentKeyboard();
   setBreakdownExpanded(false);
   sheet.classList.remove('open');
   sheet.setAttribute('aria-hidden', 'true');
   feedbackSheet.classList.remove('open');
   feedbackSheet.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('feedback-open', 'keyboard-open');
-  mainSheetUnderlay.classList.remove('is-visible');
-  feedbackSheetUnderlay.classList.remove('is-visible');
+  document.body.classList.remove('feedback-open');
   overlay.classList.remove('feedback-mode');
   hideOverlay();
   unlockPageScroll();
@@ -446,11 +427,11 @@ function updateFeeling() {
 feelingRange.addEventListener('input', updateFeeling);
 feelingRange.addEventListener('change', updateFeeling);
 let feelingPointerId = null;
-function updateFeelingFromPointer(event) {
+function updateFeelingAt(clientX) {
   const rect = feelingSlider.getBoundingClientRect();
   const thumbRadius = 28;
   const usableWidth = Math.max(1, rect.width - thumbRadius * 2);
-  const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left - thumbRadius) / usableWidth));
+  const ratio = Math.min(1, Math.max(0, (clientX - rect.left - thumbRadius) / usableWidth));
   const nextValue = String(Math.round(ratio * 3));
   if (feelingRange.value === nextValue) return;
   feelingRange.value = nextValue;
@@ -458,51 +439,89 @@ function updateFeelingFromPointer(event) {
   feelingRange.dispatchEvent(new Event('change', { bubbles: true }));
 }
 feelingSlider.addEventListener('pointerdown', event => {
+  if (event.pointerType === 'touch') return;
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   feelingPointerId = event.pointerId;
   feelingSlider.classList.add('dragging');
-  feelingSlider.setPointerCapture(event.pointerId);
-  updateFeelingFromPointer(event);
+  try { feelingSlider.setPointerCapture(event.pointerId); } catch {}
+  updateFeelingAt(event.clientX);
   event.preventDefault();
 });
 feelingSlider.addEventListener('pointermove', event => {
+  if (event.pointerType === 'touch') return;
   if (event.pointerId !== feelingPointerId) return;
-  updateFeelingFromPointer(event);
+  updateFeelingAt(event.clientX);
   event.preventDefault();
 });
 function finishFeelingPointer(event) {
+  if (event.pointerType === 'touch') return;
   if (event.pointerId !== feelingPointerId) return;
-  if (feelingSlider.hasPointerCapture(event.pointerId)) feelingSlider.releasePointerCapture(event.pointerId);
+  try {
+    if (feelingSlider.hasPointerCapture(event.pointerId)) feelingSlider.releasePointerCapture(event.pointerId);
+  } catch {}
   feelingPointerId = null;
   feelingSlider.classList.remove('dragging');
 }
 feelingSlider.addEventListener('pointerup', finishFeelingPointer);
 feelingSlider.addEventListener('pointercancel', finishFeelingPointer);
+document.addEventListener('pointermove', event => {
+  if (event.pointerType === 'touch') return;
+  if (event.pointerId !== feelingPointerId) return;
+  updateFeelingAt(event.clientX);
+  event.preventDefault();
+}, { passive: false });
+document.addEventListener('pointerup', finishFeelingPointer);
+document.addEventListener('pointercancel', finishFeelingPointer);
+let feelingTouchId = null;
+feelingSlider.addEventListener('touchstart', event => {
+  const touch = event.changedTouches[0];
+  if (!touch) return;
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  feelingTouchId = touch.identifier;
+  feelingSlider.classList.add('dragging');
+  updateFeelingAt(touch.clientX);
+  event.preventDefault();
+}, { passive: false });
+document.addEventListener('touchmove', event => {
+  if (feelingTouchId === null) return;
+  const touch = Array.from(event.touches).find(item => item.identifier === feelingTouchId);
+  if (!touch) return;
+  updateFeelingAt(touch.clientX);
+  event.preventDefault();
+}, { passive: false });
+function finishFeelingTouch(event) {
+  if (feelingTouchId === null) return;
+  const touchEnded = Array.from(event.changedTouches).some(item => item.identifier === feelingTouchId);
+  if (!touchEnded) return;
+  feelingTouchId = null;
+  feelingSlider.classList.remove('dragging');
+}
+document.addEventListener('touchend', finishFeelingTouch);
+document.addEventListener('touchcancel', finishFeelingTouch);
 window.addEventListener('resize', () => {
   updateFeeling();
   updateSheetScrollMode();
-  syncVisualViewport();
 });
-window.visualViewport?.addEventListener('resize', syncVisualViewport);
-window.visualViewport?.addEventListener('scroll', syncVisualViewport);
-weatherComment.addEventListener('focus', () => window.setTimeout(syncVisualViewport, 120));
-weatherComment.addEventListener('blur', () => window.setTimeout(syncVisualViewport, 80));
+weatherComment.addEventListener('focus', event => {
+  if (performance.now() < suppressCommentFocusUntil) event.currentTarget.blur();
+});
 if ('ResizeObserver' in window) new ResizeObserver(updateSheetScrollMode).observe(sheetScroll);
 document.fonts?.ready.then(updateSheetScrollMode);
 feedbackForm.addEventListener('submit', event => {
   event.preventDefault();
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-  document.body.classList.remove('keyboard-open');
+  dismissCommentKeyboard();
   setReaction('dislike');
   feedbackSheet.classList.add('submitted');
-  window.setTimeout(syncVisualViewport, 80);
 });
 feedbackDone.addEventListener('click', closeFeedback);
 
-overlay.addEventListener('click', () => {
+overlay.addEventListener('pointerdown', event => {
+  event.preventDefault();
+  event.stopPropagation();
   if (feedbackSheet.classList.contains('open')) closeFeedback();
   else closeSheet();
-});
+}, { passive: false });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
   if (feedbackSheet.classList.contains('open')) closeFeedback();
@@ -524,35 +543,39 @@ function clearPanelDrag(panel) {
 function attachDismissGesture(panel, closePanel) {
   const handle = panel.querySelector('.grabber');
   let active = false;
+  let pointerId = null;
+  let touchId = null;
   let startY = 0;
+  let startOffset = 0;
   let distance = 0;
   let startedAt = 0;
   let settleTimer = 0;
 
-  handle.addEventListener('pointerdown', event => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  const start = clientY => {
+    dismissCommentKeyboard();
     clearTimeout(settleTimer);
+    const panelRect = panel.getBoundingClientRect();
+    const openTop = window.innerHeight * 2 - panelRect.height;
+    startOffset = Math.max(0, panelRect.top - openTop);
+    panel.style.transform = `translate(-50%, ${startOffset}px)`;
+    void panel.offsetWidth;
     active = true;
-    startY = event.clientY;
+    startY = clientY;
     distance = 0;
     startedAt = performance.now();
     panel.classList.add('dragging');
-    handle.setPointerCapture(event.pointerId);
-  });
+  };
 
-  handle.addEventListener('pointermove', event => {
+  const moveTo = clientY => {
     if (!active) return;
-    distance = Math.max(0, event.clientY - startY);
-    panel.style.transform = `translate(-50%, ${distance}px)`;
+    distance = Math.max(0, clientY - startY);
+    panel.style.transform = `translate(-50%, ${startOffset + distance}px)`;
     overlay.style.opacity = String(Math.max(.38, 1 - distance / 360));
-    event.preventDefault();
-  });
+  };
 
-  const finish = event => {
+  const finish = () => {
     if (!active) return;
     active = false;
-    if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
     const duration = Math.max(1, performance.now() - startedAt);
     const dismiss = distance > 64 || (distance > 28 && distance / duration > .42);
     panel.classList.remove('dragging');
@@ -572,8 +595,60 @@ function attachDismissGesture(panel, closePanel) {
     settleTimer = window.setTimeout(() => clearPanelDrag(panel), 210);
   };
 
-  handle.addEventListener('pointerup', finish);
-  handle.addEventListener('pointercancel', finish);
+  handle.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    pointerId = event.pointerId;
+    start(event.clientY);
+    try { handle.setPointerCapture(event.pointerId); } catch {}
+    event.preventDefault();
+  });
+
+  const movePointer = event => {
+    if (event.pointerId !== pointerId) return;
+    moveTo(event.clientY);
+    event.preventDefault();
+  };
+
+  const finishPointer = event => {
+    if (event.pointerId !== pointerId) return;
+    try {
+      if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+    } catch {}
+    pointerId = null;
+    finish();
+  };
+
+  handle.addEventListener('touchstart', event => {
+    if (active || touchId !== null) return;
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    touchId = touch.identifier;
+    start(touch.clientY);
+    event.preventDefault();
+  }, { passive: false });
+
+  const moveTouch = event => {
+    if (touchId === null) return;
+    const touch = Array.from(event.touches).find(item => item.identifier === touchId);
+    if (!touch) return;
+    moveTo(touch.clientY);
+    event.preventDefault();
+  };
+
+  const finishTouch = event => {
+    if (touchId === null) return;
+    const touchEnded = Array.from(event.changedTouches).some(item => item.identifier === touchId);
+    if (!touchEnded) return;
+    touchId = null;
+    finish();
+  };
+
+  document.addEventListener('pointermove', movePointer, { passive: false });
+  document.addEventListener('pointerup', finishPointer);
+  document.addEventListener('pointercancel', finishPointer);
+  document.addEventListener('touchmove', moveTouch, { passive: false });
+  document.addEventListener('touchend', finishTouch);
+  document.addEventListener('touchcancel', finishTouch);
 }
 
 attachDismissGesture(sheet, closeSheet);
@@ -584,7 +659,7 @@ function updateBackgroundDim() {
   cancelAnimationFrame(dimFrame);
   dimFrame = requestAnimationFrame(() => {
     const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-    const dim = Math.min(Math.max(scrollTop - 64, 0) / 720 * .24, .24);
+    const dim = Math.min(Math.max(scrollTop - 48, 0) / 640 * .18, .18);
     app.style.setProperty('--bg-dim', dim.toFixed(3));
   });
 }
