@@ -617,6 +617,14 @@ breakdownToggle.addEventListener('click', () => {
   requestAnimationFrame(updateSheetScrollMode);
 });
 
+const finishBreakdownLayoutChange = event => {
+  if (event.target !== breakdown || event.propertyName !== 'height') return;
+  updateSheetScrollMode();
+  syncPanelUnderlay(sheet);
+};
+breakdown.addEventListener('transitionend', finishBreakdownLayoutChange);
+breakdown.addEventListener('transitioncancel', finishBreakdownLayoutChange);
+
 document.querySelector('.rating-dislike').addEventListener('click', () => {
   if (ratingControl.classList.contains('disliked')) setReaction(null);
   else openFeedback();

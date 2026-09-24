@@ -4,12 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-content">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preload" href="assets/main-bg-source.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="preload" href="assets/main-bg-rain.webp" as="image" type="image/webp">
   <link rel="preload" href="assets/ys-text-regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/ys-text-medium.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/ys-text-bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/ys-text-heavy.woff2" as="font" type="font/woff2" crossorigin>
   <title>Погода — индекс комфортности</title>
-  <link rel="stylesheet" href="style.css?v=20260924-19">
+  <link rel="stylesheet" href="style.css?v=20260924-20">
 </head>
 <body>
   <main class="phone" id="app" data-condition="good">
@@ -316,6 +318,6 @@
       </aside>
     </aside>
   </main>
-  <script src="app.js?v=20260924-16"></script>
+  <script src="app.js?v=20260924-17"></script>
 </body>
 </html>
