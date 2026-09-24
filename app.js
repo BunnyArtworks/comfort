@@ -2,9 +2,7 @@ const app = document.querySelector('#app');
 const sheet = document.querySelector('.sheet');
 const sheetScroll = document.querySelector('.sheet-scroll');
 const overlay = document.querySelector('.overlay');
-const sheetBottomCanvas = document.querySelector('.sheet-bottom-canvas');
 const sheetUnderlay = document.querySelector('.sheet-underlay');
-const feedbackUnderlay = document.querySelector('.feedback-underlay');
 const breakdown = document.querySelector('#breakdown');
 const breakdownRows = document.querySelector('.breakdown-rows');
 const breakdownToggle = document.querySelector('#breakdown-toggle');
@@ -17,6 +15,7 @@ const chartTooltip = document.querySelector('#chart-tooltip');
 const bars = document.querySelector('#bars');
 const times = document.querySelector('#times');
 const feedbackSheet = document.querySelector('.feedback-sheet');
+const feedbackDimmer = document.querySelector('.feedback-dimmer');
 const feelingRange = document.querySelector('#feeling-range');
 const feelingSlider = document.querySelector('#feeling-slider');
 const feelingLabel = document.querySelector('#feeling-label');
@@ -36,7 +35,6 @@ let lockedScrollY = 0;
 let tooltipPositionFrame = 0;
 const panelOpenFrames = new WeakMap();
 const underlayHideTimers = new WeakMap();
-let bottomCanvasHideTimer = 0;
 
 function lockPageScroll() {
   if (document.body.classList.contains('is-scroll-locked')) return;
@@ -59,37 +57,18 @@ function cancelPanelOpen(panel) {
 }
 
 function panelUnderlay(panel) {
-  return panel === feedbackSheet ? feedbackUnderlay : sheetUnderlay;
+  return panel === sheet ? sheetUnderlay : null;
 }
 
-function syncSheetBottomCanvas() {
-  if (sheetBottomCanvas.hidden) return;
-  const viewport = window.visualViewport;
-  const layoutHeight = window.innerHeight;
-  const visualBottom = viewport ? viewport.offsetTop + viewport.height : layoutHeight;
-  const documentTop = window.scrollY + Math.max(0, visualBottom - 240);
-  const coveredBottom = window.scrollY + Math.max(layoutHeight, visualBottom) + 480;
-  sheetBottomCanvas.style.setProperty('--bottom-canvas-top', `${documentTop}px`);
-  sheetBottomCanvas.style.setProperty('--bottom-canvas-height', `${coveredBottom - documentTop}px`);
-}
-
-function showSheetBottomCanvas() {
-  clearTimeout(bottomCanvasHideTimer);
-  sheetBottomCanvas.hidden = false;
-  syncSheetBottomCanvas();
-}
-
-function hideSheetBottomCanvas() {
-  clearTimeout(bottomCanvasHideTimer);
-  bottomCanvasHideTimer = window.setTimeout(() => {
-    if (!sheet.classList.contains('open') && !feedbackSheet.classList.contains('open')) {
-      sheetBottomCanvas.hidden = true;
-    }
-  }, 440);
+function panelTransform(panel, offset) {
+  return panel === feedbackSheet
+    ? `translateY(${offset})`
+    : `translate(-50%, ${offset})`;
 }
 
 function syncPanelUnderlay(panel) {
   const underlay = panelUnderlay(panel);
+  if (!underlay) return;
   const layoutHeight = window.innerHeight;
   const visibleHeight = Math.max(0, panel.offsetHeight - layoutHeight);
   const restingTop = Math.max(0, layoutHeight - visibleHeight);
@@ -109,12 +88,11 @@ function syncPanelUnderlay(panel) {
 
 function syncOpenUnderlays() {
   if (sheet.classList.contains('open')) syncPanelUnderlay(sheet);
-  if (feedbackSheet.classList.contains('open')) syncPanelUnderlay(feedbackSheet);
-  syncSheetBottomCanvas();
 }
 
 function closePanelUnderlay(panel) {
   const underlay = panelUnderlay(panel);
+  if (!underlay) return;
   const pendingHide = underlayHideTimers.get(underlay);
   if (pendingHide) clearTimeout(pendingHide);
   underlay.classList.remove('open');
@@ -129,24 +107,28 @@ function closePanelUnderlay(panel) {
 
 function openPanelFromBottom(panel) {
   const underlay = panelUnderlay(panel);
-  const pendingHide = underlayHideTimers.get(underlay);
-  if (pendingHide) clearTimeout(pendingHide);
-  underlayHideTimers.delete(underlay);
-  underlay.hidden = false;
+  if (underlay) {
+    const pendingHide = underlayHideTimers.get(underlay);
+    if (pendingHide) clearTimeout(pendingHide);
+    underlayHideTimers.delete(underlay);
+    underlay.hidden = false;
+  }
   cancelPanelOpen(panel);
   clearPanelDrag(panel);
-  syncPanelUnderlay(panel);
-  underlay.classList.remove('open');
-  underlay.style.transition = 'none';
-  void underlay.offsetHeight;
-  underlay.style.removeProperty('transition');
+  if (underlay) {
+    syncPanelUnderlay(panel);
+    underlay.classList.remove('open');
+    underlay.style.transition = 'none';
+    void underlay.offsetHeight;
+    underlay.style.removeProperty('transition');
+  }
   panel.classList.remove('open');
   panel.style.transition = 'none';
   void panel.offsetHeight;
   panel.style.removeProperty('transition');
   const frame = requestAnimationFrame(() => {
     panel.classList.add('open');
-    underlay.classList.add('open');
+    if (underlay) underlay.classList.add('open');
     panelOpenFrames.delete(panel);
   });
   panelOpenFrames.set(panel, frame);
@@ -542,7 +524,6 @@ function openSheet() {
   sheet.setAttribute('aria-hidden', 'false');
   showOverlay(false);
   lockPageScroll();
-  showSheetBottomCanvas();
   openPanelFromBottom(sheet);
   sheetScroll.scrollTop = 0;
   scoreGauge.classList.remove('is-animating');
@@ -558,7 +539,6 @@ function openFeedback() {
   document.body.classList.add('feedback-open');
   showOverlay(true);
   lockPageScroll();
-  showSheetBottomCanvas();
   openPanelFromBottom(feedbackSheet);
 }
 
@@ -583,7 +563,6 @@ function closeFeedback() {
   }
   else {
     hideOverlay();
-    hideSheetBottomCanvas();
     unlockPageScroll();
   }
 }
@@ -604,7 +583,6 @@ function closeSheet() {
   document.body.classList.remove('feedback-open');
   overlay.classList.remove('feedback-mode');
   hideOverlay();
-  hideSheetBottomCanvas();
   unlockPageScroll();
 }
 
@@ -756,6 +734,20 @@ feedbackForm.addEventListener('submit', event => {
 });
 feedbackDone.addEventListener('click', closeFeedback);
 
+feedbackDimmer.addEventListener('pointerdown', event => {
+  event.preventDefault();
+  event.stopPropagation();
+}, { passive: false });
+feedbackDimmer.addEventListener('pointerup', event => {
+  event.preventDefault();
+  event.stopPropagation();
+  closeFeedback();
+}, { passive: false });
+feedbackDimmer.addEventListener('click', event => {
+  event.preventDefault();
+  event.stopPropagation();
+});
+
 overlay.addEventListener('pointerdown', event => {
   event.preventDefault();
   event.stopPropagation();
@@ -790,8 +782,10 @@ function clearPanelDrag(panel) {
   panel.classList.remove('dragging');
   panel.style.removeProperty('transition');
   panel.style.removeProperty('transform');
-  underlay.style.removeProperty('transition');
-  underlay.style.removeProperty('transform');
+  if (underlay) {
+    underlay.style.removeProperty('transition');
+    underlay.style.removeProperty('transform');
+  }
   overlay.style.removeProperty('opacity');
 }
 
@@ -813,7 +807,7 @@ function attachDismissGesture(panel, closePanel) {
     const panelRect = panel.getBoundingClientRect();
     const openTop = window.innerHeight * 2 - panelRect.height;
     startOffset = Math.max(0, panelRect.top - openTop);
-    panel.style.transform = `translate(-50%, ${startOffset}px)`;
+    panel.style.transform = panelTransform(panel, `${startOffset}px`);
     void panel.offsetWidth;
     active = true;
     startY = clientY;
@@ -825,9 +819,11 @@ function attachDismissGesture(panel, closePanel) {
   const moveTo = clientY => {
     if (!active) return;
     distance = Math.max(0, clientY - startY);
-    panel.style.transform = `translate(-50%, ${startOffset + distance}px)`;
-    underlay.style.transition = 'none';
-    underlay.style.transform = `translate(-50%, ${startOffset + distance}px)`;
+    panel.style.transform = panelTransform(panel, `${startOffset + distance}px`);
+    if (underlay) {
+      underlay.style.transition = 'none';
+      underlay.style.transform = `translate(-50%, ${startOffset + distance}px)`;
+    }
     overlay.style.opacity = String(Math.max(.38, 1 - distance / 360));
   };
 
@@ -839,11 +835,11 @@ function attachDismissGesture(panel, closePanel) {
     panel.classList.remove('dragging');
     overlay.style.removeProperty('opacity');
     panel.style.transition = 'transform .2s cubic-bezier(.2,.8,.2,1)';
-    underlay.style.transition = 'transform .2s cubic-bezier(.2,.8,.2,1)';
+    if (underlay) underlay.style.transition = 'transform .2s cubic-bezier(.2,.8,.2,1)';
 
     if (dismiss) {
-      panel.style.transform = 'translate(-50%, 110%)';
-      underlay.style.transform = 'translate(-50%, 110%)';
+      panel.style.transform = panelTransform(panel, '110%');
+      if (underlay) underlay.style.transform = 'translate(-50%, 110%)';
       settleTimer = window.setTimeout(() => {
         clearPanelDrag(panel);
         closePanel();
@@ -851,8 +847,8 @@ function attachDismissGesture(panel, closePanel) {
       return;
     }
 
-    panel.style.transform = 'translate(-50%, 0)';
-    underlay.style.transform = 'translate(-50%, 0)';
+    panel.style.transform = panelTransform(panel, '0');
+    if (underlay) underlay.style.transform = 'translate(-50%, 0)';
     settleTimer = window.setTimeout(() => clearPanelDrag(panel), 210);
   };
 
@@ -866,6 +862,7 @@ function attachDismissGesture(panel, closePanel) {
 
   panel.addEventListener('pointerdown', event => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (panel === sheet && feedbackSheet.classList.contains('open')) return;
     const directHandle = Boolean(event.target.closest('.grabber'));
     if (!directHandle && !surfaceGestureAllowed(event.target)) return;
 

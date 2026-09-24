@@ -9,7 +9,7 @@
   <link rel="preload" href="assets/ys-text-bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/ys-text-heavy.woff2" as="font" type="font/woff2" crossorigin>
   <title>Погода — индекс комфортности</title>
-  <link rel="stylesheet" href="style.css?v=20260924-18">
+  <link rel="stylesheet" href="style.css?v=20260924-19">
 </head>
 <body>
   <main class="phone" id="app" data-condition="good">
@@ -215,7 +215,6 @@
     </section>
 
     <div class="overlay" hidden></div>
-    <div class="sheet-bottom-canvas" aria-hidden="true" hidden></div>
     <div class="sheet-underlay" aria-hidden="true" hidden></div>
     <aside class="sheet" aria-hidden="true" aria-label="Индекс комфортности">
       <div class="grabber"></div>
@@ -291,33 +290,32 @@
           <span><i class="red"></i>0–29, лучше дома</span>
         </section>
       </div>
-    </aside>
-
-    <div class="feedback-underlay" aria-hidden="true" hidden></div>
-    <aside class="feedback-sheet" aria-hidden="true" aria-label="Оценка погоды">
-      <div class="grabber"></div>
-      <form class="feedback-form">
-        <h2>А как вы ощущаете<br>погоду сейчас?</h2>
-        <div class="feeling-control">
-          <strong id="feeling-label">Дискомфортно</strong>
-          <div class="feeling-slider" id="feeling-slider">
-            <div class="feeling-track"></div>
-            <div class="feeling-fill"></div>
-            <div class="feeling-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-            <input id="feeling-range" type="range" min="0" max="3" step="1" value="1" aria-label="Насколько комфортно ощущается погода">
+      <div class="feedback-dimmer" aria-hidden="true"></div>
+      <aside class="feedback-sheet" aria-hidden="true" aria-label="Оценка погоды">
+        <div class="grabber"></div>
+        <form class="feedback-form">
+          <h2>А как вы ощущаете<br>погоду сейчас?</h2>
+          <div class="feeling-control">
+            <strong id="feeling-label">Дискомфортно</strong>
+            <div class="feeling-slider" id="feeling-slider">
+              <div class="feeling-track"></div>
+              <div class="feeling-fill"></div>
+              <div class="feeling-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+              <input id="feeling-range" type="range" min="0" max="3" step="1" value="1" aria-label="Насколько комфортно ощущается погода">
+            </div>
           </div>
-        </div>
-        <textarea id="weather-comment" rows="2" placeholder="Если хотите — расскажите, почему так"></textarea>
-        <button class="feedback-submit" type="submit">Отправить</button>
-      </form>
-      <section class="feedback-success" aria-live="polite">
-        <span class="success-mark" aria-hidden="true">✓</span>
-        <h2>Спасибо!</h2>
-        <p>Учтём вашу оценку и постараемся точнее описывать погоду.</p>
-        <button class="feedback-done" type="button">Готово</button>
-      </section>
+          <textarea id="weather-comment" rows="2" placeholder="Если хотите — расскажите, почему так"></textarea>
+          <button class="feedback-submit" type="submit">Отправить</button>
+        </form>
+        <section class="feedback-success" aria-live="polite">
+          <span class="success-mark" aria-hidden="true">✓</span>
+          <h2>Спасибо!</h2>
+          <p>Учтём вашу оценку и постараемся точнее описывать погоду.</p>
+          <button class="feedback-done" type="button">Готово</button>
+        </section>
+      </aside>
     </aside>
   </main>
-  <script src="app.js?v=20260924-15"></script>
+  <script src="app.js?v=20260924-16"></script>
 </body>
 </html>
