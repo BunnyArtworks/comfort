@@ -844,22 +844,16 @@ textarea,
   width: min(100%, 640px);
   height: var(--underlay-height, calc(100dvh + 320px));
   transform: translate(-50%, var(--underlay-closed-offset));
-  border-radius: 56px 56px 0 0;
   background: #fff;
-  opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transition:
-    top .42s cubic-bezier(.2,.8,.2,1),
-    height .42s cubic-bezier(.2,.8,.2,1),
     transform .42s cubic-bezier(.2,.8,.2,1),
-    opacity .12s ease,
     visibility 0s linear .42s;
-  will-change: top, height, transform;
+  will-change: transform;
 }
 .sheet-underlay.open {
   transform: translate(-50%, 0);
-  opacity: 1;
   visibility: visible;
   transition-delay: 0s;
 }
@@ -1385,6 +1379,7 @@ textarea,
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  filter: drop-shadow(0 0 1px rgba(147,151,173,.1)) drop-shadow(0 8px 14px rgba(147,151,173,.3));
   transition: opacity .16s ease, visibility 0s linear .16s;
 }
 .forecast-tooltip-layer.is-visible {
@@ -1410,7 +1405,6 @@ textarea,
   border-radius: 32px 32px var(--tooltip-br-right) var(--tooltip-br-left);
   color: #fff;
   background: var(--tooltip-surface);
-  box-shadow: 0 0 2px rgba(147,151,173,.1), 0 8px 28px rgba(147,151,173,.3);
   pointer-events: none;
   transform: translate3d(var(--tooltip-left), var(--tooltip-top), 0);
   transform-origin: 50% 100%;
@@ -1427,9 +1421,9 @@ textarea,
   font-weight: 500;
   line-height: 28px;
 }
-.forecast-tooltip-score { display: flex; align-items: center; gap: 6px; }
+.forecast-tooltip-score { display: flex; align-items: center; gap: 0; }
 .forecast-tooltip-score small { color: rgba(255,255,255,.4); font: inherit; }
-.forecast-tooltip-score i { width: 12px; height: 12px; border-radius: 50%; background: var(--tooltip-dot); }
+.forecast-tooltip-score i { width: 12px; height: 12px; margin-left: 6px; border-radius: 50%; background: var(--tooltip-dot); }
 .forecast-tooltip-chips {
   display: flex;
   flex-direction: column;

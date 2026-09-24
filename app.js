@@ -79,10 +79,8 @@ function syncPanelUnderlay(panel) {
   const layoutHeight = window.innerHeight;
   const visibleHeight = Math.max(0, panel.offsetHeight - layoutHeight);
   const restingTop = Math.max(0, layoutHeight - visibleHeight);
-  const panelTop = panel.classList.contains('open')
-    ? panel.getBoundingClientRect().top
-    : restingTop;
-  const documentTop = pageScrollY + Math.max(0, panelTop);
+  const underlayInset = 56;
+  const documentTop = pageScrollY + Math.max(0, restingTop) + underlayInset;
   const viewport = window.visualViewport;
   const visualBottom = pageScrollY + (viewport ? viewport.offsetTop + viewport.height : layoutHeight);
   const layoutBottom = pageScrollY + layoutHeight;
@@ -509,7 +507,9 @@ function positionForecastTooltip(card, bar) {
   const barRect = bar.getBoundingClientRect();
   const barsRect = chartBars.getBoundingClientRect();
   const tooltipWidth = tooltip.offsetWidth;
-  const anchorX = barRect.left + barRect.width / 2 - cardRect.left;
+  // The Figma connector runs along the selected bar's left edge so it does not
+  // visually cut through the bar itself. Pixel snapping keeps the 2px stem solid.
+  const anchorX = Math.round(barRect.left - cardRect.left);
   const left = Math.min(cardRect.width - tooltipWidth, Math.max(0, anchorX - tooltipWidth / 2));
   const cornerRadius = 32;
   const connectorHalfWidth = 29;
