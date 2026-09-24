@@ -27,7 +27,6 @@ const themeColor = document.querySelector('meta[name="theme-color"]');
 const weatherComment = document.querySelector('#weather-comment');
 
 const CURRENT_HOUR = 10;
-const HOUR_STEP = 43.333;
 const MAP_THEME_COLOR = '#dcecfb';
 let condition = 'good';
 let selectedDay = 0;
@@ -158,6 +157,17 @@ function valuesForDay(day) {
   return fullDays[day - 1];
 }
 
+function chartPointsForDay(day) {
+  const values = valuesForDay(day);
+  const firstHour = day === 0 ? CURRENT_HOUR : 0;
+  const step = day >= 2 ? 3 : 1;
+  const points = [];
+  for (let hour = firstHour; hour < 24; hour += step) {
+    points.push({ hour, value: values[hour] });
+  }
+  return points;
+}
+
 function tooltipDetails(day, hour, value) {
   if (day === 0 && condition === 'good' && hour === 14) {
     return [
@@ -178,7 +188,7 @@ function tooltipDetails(day, hour, value) {
 
   const daylight = hour >= 8 && hour <= 18;
   const feels = Math.round(7 + value * .12 + (daylight ? 3 : 0) + Math.sin((hour - 6) / 24 * Math.PI * 2) * 4);
-  const wind = Math.min(19, Math.max(3, Math.round(3 + (100 - value) * .27)));
+  const wind = Math.min(19, Math.max(3, Math.round(3 + (100 - value) * .32)));
   const rainNow = day === 0
     ? condition === 'bad' ? hour < 18 : hour >= 11 && hour <= 16 && hour !== 14
     : value < 38;
@@ -202,7 +212,7 @@ function hideChartTooltip(immediate = false) {
   cancelAnimationFrame(tooltipPositionFrame);
   selectedHour = null;
   chartCard.classList.remove('has-selection');
-  chartTooltip.classList.remove('is-visible');
+  chartTooltip.classList.remove('is-visible', 'is-edge-hidden');
   chartTooltip.setAttribute('aria-hidden', 'true');
   bars.querySelectorAll('.bar').forEach(bar => {
     bar.classList.remove('selected');
@@ -229,9 +239,14 @@ function positionChartTooltip() {
     const left = Math.min(maxLeft, Math.max(minLeft, anchorX - tooltipWidth / 2 - 8));
     const tailX = Math.min(tooltipWidth - 24, Math.max(24, anchorX - left));
     const top = barRect.top - cardRect.top - tooltipHeight - 16;
+    const scrollRect = plotScroll.getBoundingClientRect();
+    const barCenter = barRect.left + barRect.width / 2;
+    const tailNearCorner = tailX <= 25 || tailX >= tooltipWidth - 25;
+    const barNearViewportEdge = barCenter <= scrollRect.left + 14 || barCenter >= scrollRect.right - 14;
     chartTooltip.style.setProperty('--tooltip-x', `${left}px`);
     chartTooltip.style.setProperty('--tooltip-y', `${top}px`);
     chartTooltip.style.setProperty('--tail-x', `${tailX}px`);
+    chartTooltip.classList.toggle('is-edge-hidden', tailNearCorner || barNearViewportEdge);
   });
 }
 
@@ -242,6 +257,7 @@ function showChartTooltip(hour) {
   }
 
   selectedHour = hour;
+  chartTooltip.classList.remove('is-edge-hidden');
   const value = valuesForDay(selectedDay)[hour];
   const detailIds = ['#tooltip-feels', '#tooltip-wind', '#tooltip-rain', '#tooltip-uv', '#tooltip-danger'];
   tooltipDetails(selectedDay, hour, value).forEach(([detailValue, icon], index) => {
@@ -326,24 +342,21 @@ function renderMainHourly() {
 
 function renderChart() {
   hideChartTooltip(true);
-  const values = valuesForDay(selectedDay);
-  const hours = Array.from({ length: 24 }, (_, index) => index);
+  const points = chartPointsForDay(selectedDay);
 
   document.querySelector('#chart-copy').textContent = chartCopy[selectedDay]();
-  bars.innerHTML = values.map((value, hour) =>
-    `<button type="button" class="bar ${color(value)}${selectedDay === 0 && hour < CURRENT_HOUR ? ' past' : ''}" data-hour="${hour}" aria-label="${hour}:00, индекс комфортности ${value} из 100" style="height:${Math.max(28, Math.round(value))}px">${value}</button>`
+  plotScroll.setAttribute('aria-label', selectedDay >= 2 ? 'График комфортности с шагом три часа' : 'Почасовой график комфортности');
+  bars.innerHTML = points.map(({ hour, value }) =>
+    `<button type="button" class="bar ${color(value)}" data-hour="${hour}" aria-label="${hour}:00, индекс комфортности ${value} из 100" style="height:${Math.max(28, Math.round(value))}px">${value}</button>`
   ).join('');
 
-  times.innerHTML = hours.map(hour => {
+  times.innerHTML = points.map(({ hour }) => {
     const current = selectedDay === 0 && hour === CURRENT_HOUR;
     const label = current || (selectedDay !== 0 && hour === 0) ? `${hour}:00` : String(hour);
-    const past = selectedDay === 0 && hour < CURRENT_HOUR;
-    return `<span data-hour="${hour}" class="${current ? 'current' : ''}${past ? ' past' : ''}">${label}</span>`;
+    return `<span data-hour="${hour}" class="${current ? 'current' : ''}">${label}</span>`;
   }).join('');
 
-  requestAnimationFrame(() => {
-    plotScroll.scrollLeft = selectedDay === 0 ? CURRENT_HOUR * HOUR_STEP : 0;
-  });
+  requestAnimationFrame(() => { plotScroll.scrollLeft = 0; });
 }
 
 function renderCondition() {
