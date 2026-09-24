@@ -2,6 +2,7 @@ const app = document.querySelector('#app');
 const sheet = document.querySelector('.sheet');
 const sheetScroll = document.querySelector('.sheet-scroll');
 const overlay = document.querySelector('.overlay');
+const sheetBottomCanvas = document.querySelector('.sheet-bottom-canvas');
 const sheetUnderlay = document.querySelector('.sheet-underlay');
 const feedbackUnderlay = document.querySelector('.feedback-underlay');
 const breakdown = document.querySelector('#breakdown');
@@ -35,6 +36,7 @@ let lockedScrollY = 0;
 let tooltipPositionFrame = 0;
 const panelOpenFrames = new WeakMap();
 const underlayHideTimers = new WeakMap();
+let bottomCanvasHideTimer = 0;
 
 function lockPageScroll() {
   if (document.body.classList.contains('is-scroll-locked')) return;
@@ -60,6 +62,32 @@ function panelUnderlay(panel) {
   return panel === feedbackSheet ? feedbackUnderlay : sheetUnderlay;
 }
 
+function syncSheetBottomCanvas() {
+  if (sheetBottomCanvas.hidden) return;
+  const viewport = window.visualViewport;
+  const layoutHeight = window.innerHeight;
+  const visualBottom = viewport ? viewport.offsetTop + viewport.height : layoutHeight;
+  const documentTop = window.scrollY + Math.max(0, visualBottom - 240);
+  const coveredBottom = window.scrollY + Math.max(layoutHeight, visualBottom) + 480;
+  sheetBottomCanvas.style.setProperty('--bottom-canvas-top', `${documentTop}px`);
+  sheetBottomCanvas.style.setProperty('--bottom-canvas-height', `${coveredBottom - documentTop}px`);
+}
+
+function showSheetBottomCanvas() {
+  clearTimeout(bottomCanvasHideTimer);
+  sheetBottomCanvas.hidden = false;
+  syncSheetBottomCanvas();
+}
+
+function hideSheetBottomCanvas() {
+  clearTimeout(bottomCanvasHideTimer);
+  bottomCanvasHideTimer = window.setTimeout(() => {
+    if (!sheet.classList.contains('open') && !feedbackSheet.classList.contains('open')) {
+      sheetBottomCanvas.hidden = true;
+    }
+  }, 440);
+}
+
 function syncPanelUnderlay(panel) {
   const underlay = panelUnderlay(panel);
   const layoutHeight = window.innerHeight;
@@ -82,6 +110,7 @@ function syncPanelUnderlay(panel) {
 function syncOpenUnderlays() {
   if (sheet.classList.contains('open')) syncPanelUnderlay(sheet);
   if (feedbackSheet.classList.contains('open')) syncPanelUnderlay(feedbackSheet);
+  syncSheetBottomCanvas();
 }
 
 function closePanelUnderlay(panel) {
@@ -513,6 +542,7 @@ function openSheet() {
   sheet.setAttribute('aria-hidden', 'false');
   showOverlay(false);
   lockPageScroll();
+  showSheetBottomCanvas();
   openPanelFromBottom(sheet);
   sheetScroll.scrollTop = 0;
   scoreGauge.classList.remove('is-animating');
@@ -528,6 +558,7 @@ function openFeedback() {
   document.body.classList.add('feedback-open');
   showOverlay(true);
   lockPageScroll();
+  showSheetBottomCanvas();
   openPanelFromBottom(feedbackSheet);
 }
 
@@ -552,6 +583,7 @@ function closeFeedback() {
   }
   else {
     hideOverlay();
+    hideSheetBottomCanvas();
     unlockPageScroll();
   }
 }
@@ -572,6 +604,7 @@ function closeSheet() {
   document.body.classList.remove('feedback-open');
   overlay.classList.remove('feedback-mode');
   hideOverlay();
+  hideSheetBottomCanvas();
   unlockPageScroll();
 }
 

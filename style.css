@@ -836,6 +836,18 @@ textarea,
 }
 .overlay.is-visible { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
 .overlay.is-dismissing { visibility: visible; pointer-events: auto; }
+.sheet-bottom-canvas {
+  position: absolute;
+  z-index: 21;
+  top: var(--bottom-canvas-top, 0px);
+  left: 50%;
+  width: min(100%, 640px);
+  height: var(--bottom-canvas-height, calc(100dvh + 480px));
+  transform: translateX(-50%);
+  background: #fff;
+  pointer-events: none;
+}
+body.feedback-open .sheet-bottom-canvas { z-index: 23; }
 .sheet-underlay,
 .feedback-underlay {
   --underlay-closed-offset: calc(100dvh + 64px);
@@ -1372,7 +1384,8 @@ textarea,
   .sheet { width: 100%; }
   .feedback-sheet { width: 100%; }
   .sheet-underlay,
-  .feedback-underlay { width: 100%; }
+  .feedback-underlay,
+  .sheet-bottom-canvas { width: 100%; }
 }
 
 @media (max-width: 375px) and (min-height: 760px) {
