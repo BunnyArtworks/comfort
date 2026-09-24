@@ -1131,7 +1131,7 @@ textarea,
 .chart-card {
   position: relative;
   margin: 0 20px;
-  padding: 18px 0 32px 16px;
+  padding: 26px 0 32px 16px;
   border-radius: 32px;
   background: var(--soft);
   overflow: visible;
