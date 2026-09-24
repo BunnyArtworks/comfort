@@ -69,16 +69,19 @@ function panelTransform(panel, offset) {
 function syncPanelUnderlay(panel) {
   const underlay = panelUnderlay(panel);
   if (!underlay) return;
+  const pageScrollY = document.body.classList.contains('is-scroll-locked')
+    ? lockedScrollY
+    : window.scrollY;
   const layoutHeight = window.innerHeight;
   const visibleHeight = Math.max(0, panel.offsetHeight - layoutHeight);
   const restingTop = Math.max(0, layoutHeight - visibleHeight);
   const panelTop = panel.classList.contains('open')
     ? panel.getBoundingClientRect().top
     : restingTop;
-  const documentTop = window.scrollY + Math.max(0, panelTop);
+  const documentTop = pageScrollY + Math.max(0, panelTop);
   const viewport = window.visualViewport;
-  const visualBottom = window.scrollY + (viewport ? viewport.offsetTop + viewport.height : layoutHeight);
-  const layoutBottom = window.scrollY + layoutHeight;
+  const visualBottom = pageScrollY + (viewport ? viewport.offsetTop + viewport.height : layoutHeight);
+  const layoutBottom = pageScrollY + layoutHeight;
   const coveredBottom = Math.max(layoutBottom, visualBottom) + 480;
 
   underlay.style.setProperty('--underlay-top', `${documentTop}px`);

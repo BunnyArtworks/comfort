@@ -101,14 +101,12 @@ textarea,
   min-height: 100dvh;
   position: relative;
   overflow: visible;
-  isolation: isolate;
   background: transparent;
 }
 
 .weather-screen {
   --content-bottom-padding: 32px;
   position: relative;
-  z-index: 1;
   width: 100%;
   height: calc(min(193.64vw, 1239.3px) + 922px + var(--content-bottom-padding));
   overflow: visible;
@@ -150,8 +148,8 @@ textarea,
   min-height: 0;
   flex: 1 1 auto;
 }
-.phone::before,
-.phone::after {
+.weather-screen::before,
+.weather-screen::after {
   content: "";
   position: fixed;
   top: 0;
@@ -160,20 +158,17 @@ textarea,
   height: 100dvh;
   transform: translateX(-50%);
   pointer-events: none;
-  transition: opacity .24s ease;
 }
-.phone::before {
+.weather-screen::before {
   z-index: 0;
   background: #3e8cdd url("assets/main-bg-source.webp") center / cover no-repeat;
-  opacity: 1;
 }
-.phone::after {
-  z-index: 0;
-  background: #355992 url("assets/main-bg-rain.webp") center top / cover no-repeat;
-  opacity: 0;
+#app[data-condition="bad"] .weather-screen::before {
+  background-color: #355992;
+  background-image: url("assets/main-bg-rain.webp");
+  background-position: center top;
 }
-#app[data-condition="bad"]::before { opacity: 0; }
-#app[data-condition="bad"]::after { opacity: 1; }
+.weather-screen::after { display: none; }
 
 .art { position: absolute; display: block; width: 100%; height: auto; left: 0; pointer-events: none; }
 .map-shell {
@@ -1375,8 +1370,6 @@ body.feedback-open .feedback-dimmer {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .phone::before,
-  .phone::after { transition: none; }
   .score-gauge.is-animating .score-exact img:last-child,
   .score-gauge.is-animating .score-progress,
   .sheet.open .summary h1,
@@ -1403,6 +1396,8 @@ body.feedback-open .feedback-dimmer {
   }
   .scrolled-view-background { top: calc(min(169.98vw, 1087.9px) + var(--mobile-top-shift)); }
   .status-bar { display: none; }
+  .weather-screen::before { display: none; }
+  .weather-screen::after { top: -160px; height: calc(100dvh + 320px); }
   .map-shell { height: calc(49.36cqw + var(--mobile-top-shift)); }
   .map-surface { height: calc(52.16cqw + var(--mobile-top-shift)); }
   .map-source { top: calc(-29.77cqw + var(--mobile-top-shift)); }
