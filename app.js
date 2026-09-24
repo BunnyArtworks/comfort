@@ -514,7 +514,7 @@ function forecastBarAt(chart, clientX) {
 
 function forecastTooltipSquircle(width, height, leftRadius, rightRadius) {
   const points = [];
-  const topRadius = 32;
+  const topRadius = 48;
   const steps = 10;
   const add = (x, y) => points.push(`${x.toFixed(3)}px ${y.toFixed(3)}px`);
   const addCorner = (cx, cy, radius, startAngle, endAngle) => {
@@ -552,7 +552,7 @@ function positionForecastTooltip(card, bar) {
   // visually cut through the bar itself. Pixel snapping keeps the 2px stem solid.
   const anchorX = Math.round(barRect.left - cardRect.left);
   const left = Math.min(cardRect.width - tooltipWidth, Math.max(0, anchorX - tooltipWidth / 2));
-  const cornerRadius = 32;
+  const cornerRadius = 48;
   const connectorHalfWidth = 29;
   const anchorInsideTooltip = anchorX - left;
   const leftRadius = Math.min(cornerRadius, Math.max(8, anchorInsideTooltip - connectorHalfWidth));
