@@ -351,9 +351,8 @@ function renderCondition() {
   app.dataset.condition = condition;
   document.body.dataset.condition = condition;
   document.documentElement.dataset.condition = condition;
-  const pageColor = condition === 'good' ? '#3e8cdd' : '#355992';
   themeColor.setAttribute('content', MAP_THEME_COLOR);
-  document.documentElement.style.backgroundColor = pageColor;
+  document.documentElement.style.backgroundColor = MAP_THEME_COLOR;
   scoreValue.textContent = data.score;
   scoreGauge.setAttribute('aria-label', `${data.score} из 100`);
   scoreGauge.style.setProperty('--score-color', data.scoreColor);

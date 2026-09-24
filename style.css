@@ -49,10 +49,11 @@
 html, body { margin: 0; min-height: 100%; touch-action: pan-x pan-y; }
 html {
   min-height: 100dvh;
-  background: #3e8cdd url("assets/main-bg-source.png") center / cover fixed no-repeat;
+  /* Safari 26+ uses the root canvas behind its transparent top chrome.
+     Keep that canvas map-light; the weather artwork lives on its own layer. */
+  background: #dcecfb;
   overscroll-behavior-y: none;
 }
-html[data-condition="bad"] { background-color: #355992; background-image: url("assets/main-bg-rain.png"); }
 body {
   font-family: "YS Text", "Arial", sans-serif;
   font-feature-settings: "lnum" 1, "pnum" 1;
@@ -1330,7 +1331,7 @@ textarea,
   }
   .scrolled-view-background { top: calc(min(169.98vw, 1087.9px) + var(--mobile-top-shift)); }
   .status-bar { display: none; }
-  .weather-screen::before { display: none; }
+  .weather-screen::before { display: block; }
   .weather-screen::after { top: -160px; height: calc(100dvh + 320px); }
   .map-shell { height: calc(49.36cqw + var(--mobile-top-shift)); }
   .map-surface { height: calc(52.16cqw + var(--mobile-top-shift)); }
