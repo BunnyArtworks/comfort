@@ -295,15 +295,20 @@ let overlayHideTimer = 0;
 function showOverlay(feedbackMode = false) {
   clearTimeout(overlayHideTimer);
   overlay.hidden = false;
+  overlay.classList.remove('is-dismissing');
   overlay.classList.toggle('feedback-mode', feedbackMode);
   requestAnimationFrame(() => overlay.classList.add('is-visible'));
 }
 
 function hideOverlay() {
   clearTimeout(overlayHideTimer);
+  overlay.classList.add('is-dismissing');
   overlay.classList.remove('is-visible');
   overlayHideTimer = window.setTimeout(() => {
-    if (!sheet.classList.contains('open') && !feedbackSheet.classList.contains('open')) overlay.hidden = true;
+    if (!sheet.classList.contains('open') && !feedbackSheet.classList.contains('open')) {
+      overlay.hidden = true;
+      overlay.classList.remove('is-dismissing');
+    }
   }, 440);
 }
 
@@ -516,9 +521,17 @@ feedbackDone.addEventListener('click', closeFeedback);
 overlay.addEventListener('pointerdown', event => {
   event.preventDefault();
   event.stopPropagation();
+}, { passive: false });
+overlay.addEventListener('pointerup', event => {
+  event.preventDefault();
+  event.stopPropagation();
   if (feedbackSheet.classList.contains('open')) closeFeedback();
   else closeSheet();
 }, { passive: false });
+overlay.addEventListener('click', event => {
+  event.preventDefault();
+  event.stopPropagation();
+});
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
   if (feedbackSheet.classList.contains('open')) closeFeedback();

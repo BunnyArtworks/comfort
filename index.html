@@ -10,11 +10,16 @@
   <link rel="preload" href="assets/ys-text-bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/ys-text-heavy.woff2" as="font" type="font/woff2" crossorigin>
   <title>Погода — индекс комфортности</title>
-  <link rel="stylesheet" href="style.css?v=20260924-3">
+  <link rel="stylesheet" href="style.css?v=20260924-4">
 </head>
 <body>
   <main class="phone" id="app" data-condition="good">
     <section class="weather-screen" aria-label="Главный экран погоды">
+      <div class="scrolled-view-background" aria-hidden="true">
+        <img src="assets/scrolled-view-fade.svg" alt="">
+        <img src="assets/scrolled-view-fill.svg" alt="">
+      </div>
+      <div class="content-column">
       <div class="map-shell" aria-hidden="true">
         <div class="map-surface">
           <img class="map-source" src="assets/map-source-retina.png" alt="">
@@ -207,6 +212,7 @@
           <button class="month-forecast" type="button">Прогноз на месяц <img src="assets/arrow-right.svg" alt=""></button>
         </div>
       </section>
+      </div>
     </section>
 
     <div class="overlay" hidden></div>
@@ -302,6 +308,6 @@
       </section>
     </aside>
   </main>
-  <script src="app.js?v=20260924-2"></script>
+  <script src="app.js?v=20260924-3"></script>
 </body>
 </html>
