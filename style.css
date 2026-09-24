@@ -48,11 +48,25 @@
 [hidden] { display: none !important; }
 html, body { margin: 0; min-height: 100%; overflow-x: clip; touch-action: pan-x pan-y; }
 html {
+  --top-canvas-height: max(64px, calc(env(safe-area-inset-top, 0px) + 12px));
   min-height: 100dvh;
-  background: #3e8cdd url("assets/main-bg-source.png") center / cover fixed no-repeat;
+  background-color: #3e8cdd;
+  background-image:
+    linear-gradient(#dcecfb, #dcecfb),
+    url("assets/main-bg-source.png");
+  background-position: center top, center;
+  background-size: 100% var(--top-canvas-height), cover;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: scroll, fixed;
   overscroll-behavior-y: none;
 }
-html[data-condition="bad"] { background-color: #355992; background-image: url("assets/main-bg-rain.png"); }
+html[data-condition="bad"] {
+  background-color: #355992;
+  background-image:
+    linear-gradient(#dcecfb, #dcecfb),
+    url("assets/main-bg-rain.png");
+  background-position: center top, center top;
+}
 body {
   font-family: "YS Text", "Arial", sans-serif;
   font-feature-settings: "lnum" 1, "pnum" 1;

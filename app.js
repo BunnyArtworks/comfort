@@ -25,11 +25,9 @@ const summary = document.querySelector('.summary');
 const ratingNote = document.querySelector('.rating-note');
 const feedbackForm = document.querySelector('.feedback-form');
 const feedbackDone = document.querySelector('.feedback-done');
-const themeColor = document.querySelector('meta[name="theme-color"]');
 const weatherComment = document.querySelector('#weather-comment');
 
 const CURRENT_HOUR = 10;
-const MAP_THEME_COLOR = '#dcecfb';
 let condition = 'good';
 let selectedDay = 0;
 let selectedHour = null;
@@ -404,7 +402,6 @@ function renderCondition() {
   document.body.dataset.condition = condition;
   document.documentElement.dataset.condition = condition;
   const pageColor = condition === 'good' ? '#3e8cdd' : '#355992';
-  themeColor.setAttribute('content', MAP_THEME_COLOR);
   document.documentElement.style.backgroundColor = pageColor;
   scoreValue.textContent = data.score;
   scoreGauge.setAttribute('aria-label', `${data.score} из 100`);
