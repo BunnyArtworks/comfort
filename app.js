@@ -27,19 +27,40 @@ const HOUR_STEP = 43.333;
 let condition = 'good';
 let selectedDay = 0;
 let lockedScrollY = 0;
+const panelOpenFrames = new WeakMap();
 
 function lockPageScroll() {
   if (document.body.classList.contains('is-scroll-locked')) return;
   lockedScrollY = window.scrollY;
-  document.body.style.top = `-${lockedScrollY}px`;
+  document.documentElement.classList.add('is-scroll-locked');
   document.body.classList.add('is-scroll-locked');
 }
 
 function unlockPageScroll() {
   if (!document.body.classList.contains('is-scroll-locked')) return;
+  document.documentElement.classList.remove('is-scroll-locked');
   document.body.classList.remove('is-scroll-locked');
-  document.body.style.removeProperty('top');
-  window.scrollTo(0, lockedScrollY);
+  if (Math.abs(window.scrollY - lockedScrollY) > 1) window.scrollTo(0, lockedScrollY);
+}
+
+function cancelPanelOpen(panel) {
+  const frame = panelOpenFrames.get(panel);
+  if (frame) cancelAnimationFrame(frame);
+  panelOpenFrames.delete(panel);
+}
+
+function openPanelFromBottom(panel) {
+  cancelPanelOpen(panel);
+  clearPanelDrag(panel);
+  panel.classList.remove('open');
+  panel.style.transition = 'none';
+  void panel.offsetHeight;
+  panel.style.removeProperty('transition');
+  const frame = requestAnimationFrame(() => {
+    panel.classList.add('open');
+    panelOpenFrames.delete(panel);
+  });
+  panelOpenFrames.set(panel, frame);
 }
 
 const conditions = {
@@ -301,13 +322,14 @@ function openSheet() {
   });
   renderCondition();
   setBreakdownExpanded(false);
+  cancelPanelOpen(feedbackSheet);
   feedbackSheet.classList.remove('open');
   feedbackSheet.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('feedback-open');
-  sheet.classList.add('open');
   sheet.setAttribute('aria-hidden', 'false');
   showOverlay(false);
   lockPageScroll();
+  openPanelFromBottom(sheet);
   sheetScroll.scrollTop = 0;
   scoreGauge.classList.remove('is-animating');
   void scoreGauge.offsetWidth;
@@ -318,11 +340,11 @@ function openSheet() {
 function openFeedback() {
   suppressCommentFocusUntil = 0;
   feedbackSheet.classList.remove('submitted');
-  feedbackSheet.classList.add('open');
   feedbackSheet.setAttribute('aria-hidden', 'false');
   document.body.classList.add('feedback-open');
   showOverlay(true);
   lockPageScroll();
+  openPanelFromBottom(feedbackSheet);
 }
 
 let suppressCommentFocusUntil = 0;
@@ -333,6 +355,8 @@ function dismissCommentKeyboard() {
 
 function closeFeedback() {
   dismissCommentKeyboard();
+  resetFeelingDrag();
+  cancelPanelOpen(feedbackSheet);
   feedbackSheet.classList.remove('open');
   feedbackSheet.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('feedback-open');
@@ -345,6 +369,9 @@ function closeFeedback() {
 
 function closeSheet() {
   dismissCommentKeyboard();
+  resetFeelingDrag();
+  cancelPanelOpen(sheet);
+  cancelPanelOpen(feedbackSheet);
   setBreakdownExpanded(false);
   sheet.classList.remove('open');
   sheet.setAttribute('aria-hidden', 'true');
@@ -427,6 +454,7 @@ function updateFeeling() {
 feelingRange.addEventListener('input', updateFeeling);
 feelingRange.addEventListener('change', updateFeeling);
 let feelingPointerId = null;
+
 function updateFeelingAt(clientX) {
   const rect = feelingSlider.getBoundingClientRect();
   const thumbRadius = 28;
@@ -438,66 +466,35 @@ function updateFeelingAt(clientX) {
   updateFeeling();
   feelingRange.dispatchEvent(new Event('change', { bubbles: true }));
 }
-feelingSlider.addEventListener('pointerdown', event => {
-  if (event.pointerType === 'touch') return;
-  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-  feelingPointerId = event.pointerId;
-  feelingSlider.classList.add('dragging');
-  try { feelingSlider.setPointerCapture(event.pointerId); } catch {}
-  updateFeelingAt(event.clientX);
-  event.preventDefault();
-});
-feelingSlider.addEventListener('pointermove', event => {
-  if (event.pointerType === 'touch') return;
-  if (event.pointerId !== feelingPointerId) return;
-  updateFeelingAt(event.clientX);
-  event.preventDefault();
-});
-function finishFeelingPointer(event) {
-  if (event.pointerType === 'touch') return;
-  if (event.pointerId !== feelingPointerId) return;
-  try {
-    if (feelingSlider.hasPointerCapture(event.pointerId)) feelingSlider.releasePointerCapture(event.pointerId);
-  } catch {}
+
+function resetFeelingDrag() {
   feelingPointerId = null;
   feelingSlider.classList.remove('dragging');
 }
-feelingSlider.addEventListener('pointerup', finishFeelingPointer);
-feelingSlider.addEventListener('pointercancel', finishFeelingPointer);
+
+feelingSlider.addEventListener('pointerdown', event => {
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
+  dismissCommentKeyboard();
+  feelingPointerId = event.pointerId;
+  feelingSlider.classList.add('dragging');
+  updateFeelingAt(event.clientX);
+  event.preventDefault();
+});
+
 document.addEventListener('pointermove', event => {
-  if (event.pointerType === 'touch') return;
   if (event.pointerId !== feelingPointerId) return;
   updateFeelingAt(event.clientX);
   event.preventDefault();
 }, { passive: false });
-document.addEventListener('pointerup', finishFeelingPointer);
-document.addEventListener('pointercancel', finishFeelingPointer);
-let feelingTouchId = null;
-feelingSlider.addEventListener('touchstart', event => {
-  const touch = event.changedTouches[0];
-  if (!touch) return;
-  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-  feelingTouchId = touch.identifier;
-  feelingSlider.classList.add('dragging');
-  updateFeelingAt(touch.clientX);
-  event.preventDefault();
-}, { passive: false });
-document.addEventListener('touchmove', event => {
-  if (feelingTouchId === null) return;
-  const touch = Array.from(event.touches).find(item => item.identifier === feelingTouchId);
-  if (!touch) return;
-  updateFeelingAt(touch.clientX);
-  event.preventDefault();
-}, { passive: false });
-function finishFeelingTouch(event) {
-  if (feelingTouchId === null) return;
-  const touchEnded = Array.from(event.changedTouches).some(item => item.identifier === feelingTouchId);
-  if (!touchEnded) return;
-  feelingTouchId = null;
-  feelingSlider.classList.remove('dragging');
-}
-document.addEventListener('touchend', finishFeelingTouch);
-document.addEventListener('touchcancel', finishFeelingTouch);
+
+const finishFeelingDrag = event => {
+  if (event.pointerId !== feelingPointerId) return;
+  resetFeelingDrag();
+};
+document.addEventListener('pointerup', finishFeelingDrag);
+document.addEventListener('pointercancel', finishFeelingDrag);
+window.addEventListener('blur', resetFeelingDrag);
+document.addEventListener('visibilitychange', resetFeelingDrag);
 window.addEventListener('resize', () => {
   updateFeeling();
   updateSheetScrollMode();
@@ -660,7 +657,7 @@ function updateBackgroundDim() {
   dimFrame = requestAnimationFrame(() => {
     const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
     const dim = Math.min(Math.max(scrollTop - 48, 0) / 640 * .18, .18);
-    app.style.setProperty('--bg-dim', dim.toFixed(3));
+    document.documentElement.style.setProperty('--bg-dim', dim.toFixed(3));
   });
 }
 window.addEventListener('scroll', updateBackgroundDim, { passive: true });

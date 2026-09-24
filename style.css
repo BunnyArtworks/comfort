@@ -48,6 +48,7 @@
 [hidden] { display: none !important; }
 html, body { margin: 0; min-height: 100%; touch-action: pan-x pan-y; }
 html {
+  --bg-dim: 0;
   min-height: 100dvh;
   background: #3e8cdd url("assets/main-bg-source.png") center / cover fixed no-repeat;
   overscroll-behavior-y: none;
@@ -63,12 +64,18 @@ body {
   background: transparent;
   overscroll-behavior-y: none;
 }
-body.is-scroll-locked {
+html.is-scroll-locked,
+body.is-scroll-locked { overflow: hidden; overscroll-behavior: none; }
+body.is-scroll-locked { width: 100%; }
+body::before {
+  content: "";
   position: fixed;
-  right: 0;
-  left: 0;
-  width: 100%;
-  overflow: hidden;
+  z-index: 10;
+  inset: -256px 0;
+  pointer-events: none;
+  background: #11182d;
+  opacity: var(--bg-dim);
+  transition: opacity .12s linear;
 }
 button, input, textarea {
   font-feature-settings: "lnum" 1, "pnum" 1;
@@ -129,10 +136,7 @@ textarea,
   background-position: center top;
 }
 .weather-screen::after {
-  z-index: 3;
-  background: #11182d;
-  opacity: var(--bg-dim);
-  transition: opacity .12s linear;
+  display: none;
 }
 
 .art { position: absolute; display: block; width: 100%; height: auto; left: 0; pointer-events: none; }
@@ -1115,6 +1119,7 @@ textarea,
   .weather-screen::after { top: -160px; height: calc(100dvh + 320px); }
   .map-shell { height: calc(49.36cqw + var(--mobile-top-shift)); }
   .map-surface { height: calc(52.16cqw + var(--mobile-top-shift)); }
+  .map-source { top: calc(-29.77cqw + var(--mobile-top-shift)); }
   .map-controls { top: calc(env(safe-area-inset-top, 0px) + 10px); }
   .map-pin { top: calc(32.06cqw + var(--mobile-top-shift)); }
   .map-button { top: calc(27.99cqw + var(--mobile-top-shift)); }
