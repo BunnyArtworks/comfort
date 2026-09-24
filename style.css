@@ -1303,9 +1303,9 @@ textarea,
 .forecast-day.is-interacting { z-index: 30; }
 .forecast-day-header {
   display: flex;
-  min-height: 79px;
+  min-height: 77px;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 .forecast-day-header h2 {
   min-height: 31px;
