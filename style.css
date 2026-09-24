@@ -35,6 +35,7 @@
 
 :root {
   --ink: #262633;
+  --tooltip-surface: #262633;
   --muted: #85889e;
   --soft: rgba(180, 184, 204, .12);
   --line: rgba(180, 184, 204, .28);
@@ -1346,11 +1347,9 @@ textarea,
   background: var(--bar-color);
   opacity: var(--focus-opacity, 1);
   pointer-events: none;
-  transform-origin: bottom;
-  transition: opacity .16s cubic-bezier(.2,.75,.2,1), transform .16s cubic-bezier(.2,.75,.2,1);
+  transition: opacity .16s cubic-bezier(.2,.75,.2,1);
 }
 .forecast-day.is-interacting .forecast-bar { opacity: var(--focus-opacity, .2); }
-.forecast-bar.is-current { transform: scaleY(1.025); }
 .forecast-times {
   position: relative;
   height: 16px;
@@ -1382,26 +1381,28 @@ textarea,
 .forecast-tooltip {
   --tooltip-left: 8px;
   --tooltip-top: -56px;
+  --tooltip-br-left: 32px;
+  --tooltip-br-right: 32px;
   position: absolute;
   z-index: 50;
   top: 0;
   left: 0;
   display: flex;
-  width: min(329px, calc(100% - 8px));
+  width: min(300px, calc(100% - 8px));
   height: 156px;
   flex-direction: column;
   gap: 16px;
   padding: 16px 12px 12px;
-  border-radius: 32px;
+  border-radius: 32px 32px var(--tooltip-br-right) var(--tooltip-br-left);
   color: #fff;
-  background: var(--ink);
+  background: var(--tooltip-surface);
   box-shadow: 0 0 2px rgba(147,151,173,.1), 0 8px 28px rgba(147,151,173,.3);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transform: translate3d(var(--tooltip-left), calc(var(--tooltip-top) + 8px), 0) scale(.985);
   transform-origin: 50% 100%;
-  transition: opacity .16s ease, visibility 0s linear .16s, transform .14s cubic-bezier(.2,.75,.2,1);
+  transition: opacity .16s ease, visibility 0s linear .16s, transform .14s cubic-bezier(.2,.75,.2,1), border-radius .14s cubic-bezier(.2,.75,.2,1);
   will-change: transform;
 }
 .forecast-tooltip.is-visible {
@@ -1471,7 +1472,7 @@ textarea,
   -webkit-mask-size: 20px 20px;
   mask-size: 20px 20px;
 }
-.forecast-chip.green { --chip-color: #2ed128; --chip-background: rgba(77,203,93,.3); }
+.forecast-chip.green { --chip-color: #00d98b; --chip-background: rgba(0,231,148,.24); }
 .forecast-chip.yellow { --chip-color: #ebb93b; --chip-background: rgba(255,212,42,.3); }
 .forecast-chip.orange { --chip-color: #f3843f; --chip-background: rgba(255,149,42,.3); }
 .forecast-chip.red { --chip-color: #ff674e; --chip-background: rgba(255,116,116,.3); }
@@ -1489,7 +1490,10 @@ textarea,
   pointer-events: none;
   transition: opacity .14s ease, visibility 0s linear .14s;
 }
-.forecast-tooltip-connector path { fill: var(--ink); }
+.forecast-tooltip-connector path {
+  fill: var(--tooltip-surface);
+  shape-rendering: geometricPrecision;
+}
 .forecast-tooltip-connector.is-visible {
   opacity: 1;
   visibility: visible;
@@ -1504,7 +1508,7 @@ textarea,
   .forecast-list { margin: 0 16px; }
   .forecast-day { padding-right: 16px; padding-left: 16px; }
   .forecast-legend { grid-template-columns: 1fr; }
-  .forecast-tooltip { width: calc(100% - 8px); }
+  .forecast-tooltip { width: min(300px, calc(100% - 8px)); }
   .forecast-chip { gap: 6px; padding-right: 8px; font-size: 14px; }
   .forecast-chip-icon { width: 28px; height: 28px; flex-basis: 28px; }
   .forecast-chip-icon::before {

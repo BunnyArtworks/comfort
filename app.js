@@ -508,26 +508,27 @@ function positionForecastTooltip(card, bar) {
   const barsRect = chartBars.getBoundingClientRect();
   const tooltipWidth = tooltip.offsetWidth;
   const anchorX = barRect.left + barRect.width / 2 - cardRect.left;
-  const left = Math.min(cardRect.width - tooltipWidth - 8, Math.max(8, anchorX - tooltipWidth / 2));
+  const left = Math.min(cardRect.width - tooltipWidth, Math.max(0, anchorX - tooltipWidth / 2));
   const cornerRadius = 32;
   const connectorHalfWidth = 29;
-  const attachmentX = Math.min(
-    left + tooltipWidth - cornerRadius - connectorHalfWidth,
-    Math.max(left + cornerRadius + connectorHalfWidth, anchorX)
-  );
+  const anchorInsideTooltip = anchorX - left;
+  const leftRadius = Math.min(cornerRadius, Math.max(8, anchorInsideTooltip - connectorHalfWidth));
+  const rightRadius = Math.min(cornerRadius, Math.max(8, tooltipWidth - anchorInsideTooltip - connectorHalfWidth));
   const top = barsRect.bottom - cardRect.top - 276;
   tooltip.style.setProperty('--tooltip-left', `${Math.round(left)}px`);
   tooltip.style.setProperty('--tooltip-top', `${Math.round(top)}px`);
-  const leftShoulder = attachmentX - 29;
-  const rightShoulder = attachmentX + 29;
+  tooltip.style.setProperty('--tooltip-br-left', `${Math.round(leftRadius)}px`);
+  tooltip.style.setProperty('--tooltip-br-right', `${Math.round(rightRadius)}px`);
+  const leftShoulder = Math.max(left + leftRadius, anchorX - connectorHalfWidth);
+  const rightShoulder = Math.min(left + tooltipWidth - rightRadius, anchorX + connectorHalfWidth);
   const path = [
     `M ${leftShoulder} 0`,
     `H ${rightShoulder}`,
-    `C ${attachmentX + 10} 3 ${attachmentX + 1} 12 ${attachmentX + 1} 28`,
-    `C ${attachmentX + 1} 58 ${anchorX + 1} 82 ${anchorX + 1} 120`,
+    `C ${anchorX + 10} 3 ${anchorX + 1} 12 ${anchorX + 1} 28`,
+    `V 120`,
     `H ${anchorX - 1}`,
-    `C ${anchorX - 1} 82 ${attachmentX - 1} 58 ${attachmentX - 1} 28`,
-    `C ${attachmentX - 1} 12 ${attachmentX - 10} 3 ${leftShoulder} 0 Z`
+    `V 28`,
+    `C ${anchorX - 1} 12 ${anchorX - 10} 3 ${leftShoulder} 0 Z`
   ].join(' ');
   connector.setAttribute('viewBox', `0 0 ${cardRect.width} 120`);
   connector.querySelector('path').setAttribute('d', path);
@@ -553,7 +554,7 @@ function showForecastTooltip(chart, clientX) {
   card.classList.add('is-interacting');
   card.querySelectorAll('.forecast-bar').forEach(candidate => {
     const distance = Math.abs(Number(candidate.dataset.hour) - hour);
-    const opacity = distance === 0 ? 1 : distance === 1 ? .72 : distance === 2 ? .48 : distance === 3 ? .3 : .18;
+    const opacity = distance === 0 ? 1 : distance === 1 ? .52 : distance === 2 ? .32 : .18;
     candidate.style.setProperty('--focus-opacity', opacity);
     candidate.classList.toggle('is-current', distance === 0);
   });
@@ -773,7 +774,7 @@ function updateCompactSheetHeight() {
 }
 
 function openSheet() {
-  setForecastListView(false);
+  setForecastListView(true);
   selectedDay = 0;
   document.querySelectorAll('.days button').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.day) === 0);
