@@ -46,7 +46,7 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { margin: 0; min-height: 100%; touch-action: pan-x pan-y; }
+html, body { margin: 0; min-height: 100%; overflow-x: clip; touch-action: pan-x pan-y; }
 html {
   min-height: 100dvh;
   background: #3e8cdd url("assets/main-bg-source.png") center / cover fixed no-repeat;
@@ -722,7 +722,7 @@ textarea,
   -webkit-tap-highlight-color: transparent;
 }
 .hotspot:focus-visible, .mascot-toggle:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-.speech-entry { left: 8.65cqw; top: 52.42cqw; width: 41.22cqw; height: 14.76cqw; border-radius: 32px; }
+.speech-entry { left: calc(8.65cqw + 32px); top: 52.42cqw; width: 41.22cqw; height: 14.76cqw; border-radius: 32px; }
 
 .mascot-toggle {
   position: absolute;
@@ -730,6 +730,7 @@ textarea,
   padding: 0;
   background: transparent;
   overflow: visible;
+  transform: translateX(32px);
   -webkit-tap-highlight-color: transparent;
 }
 .mascot-toggle img { display: block; width: 100%; height: 100%; object-fit: contain; }
@@ -821,6 +822,34 @@ textarea,
 }
 .overlay.is-visible { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
 .overlay.is-dismissing { visibility: visible; pointer-events: auto; }
+.sheet-underlay {
+  --underlay-closed-offset: calc(100dvh + 64px);
+  position: absolute;
+  z-index: 21;
+  top: var(--underlay-top, 0px);
+  left: 50%;
+  width: min(100%, 640px);
+  height: var(--underlay-height, calc(100dvh + 320px));
+  transform: translate(-50%, var(--underlay-closed-offset));
+  border-radius: 56px 56px 0 0;
+  background: #fff;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    top .42s cubic-bezier(.2,.8,.2,1),
+    height .42s cubic-bezier(.2,.8,.2,1),
+    transform .42s cubic-bezier(.2,.8,.2,1),
+    opacity .12s ease,
+    visibility 0s linear .42s;
+  will-change: top, height, transform;
+}
+.sheet-underlay.open {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
 .sheet {
   --sheet-visible-height: min(756px, calc(100dvh - 32px));
   position: fixed;
@@ -1323,6 +1352,7 @@ textarea,
 @media (max-width: 392px) {
   .sheet { width: 100%; }
   .feedback-sheet { width: 100%; }
+  .sheet-underlay { width: 100%; }
 }
 
 @media (max-width: 375px) and (min-height: 760px) {
@@ -1330,29 +1360,6 @@ textarea,
 }
 
 @media (max-width: 699px) {
-  html {
-    background-color: #3e8cdd;
-    background-image:
-      linear-gradient(rgba(0,136,255,.1), rgba(0,136,255,.1)),
-      url("assets/map-status-extension.png"),
-      url("assets/main-bg-source.png");
-    background-position:
-      center top,
-      center top,
-      center;
-    background-size:
-      100% min(21.31vw, 136.38px),
-      min(100vw, 640px) auto,
-      cover;
-    background-repeat: no-repeat;
-    background-attachment: scroll, scroll, fixed;
-  }
-  html[data-condition="bad"] {
-    background-image:
-      linear-gradient(rgba(0,136,255,.1), rgba(0,136,255,.1)),
-      url("assets/map-status-extension.png"),
-      url("assets/main-bg-rain.png");
-  }
   .weather-screen {
     --mobile-top-shift: calc(env(safe-area-inset-top, 0px) - 48px);
     height: calc(min(193.64vw, 1239.3px) + var(--mobile-top-shift) + 922px + var(--content-bottom-padding));
