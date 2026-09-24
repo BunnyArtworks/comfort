@@ -79,14 +79,6 @@ body {
 }
 html.is-scroll-locked,
 body.is-scroll-locked { overflow: hidden; overscroll-behavior: none; }
-html.is-scroll-locked {
-  background-color: #fff !important;
-  background-image: linear-gradient(#dcecfb, #dcecfb) !important;
-  background-position: center top !important;
-  background-size: 100% var(--top-canvas-height) !important;
-  background-repeat: no-repeat !important;
-  background-attachment: scroll !important;
-}
 body.is-scroll-locked { width: 100%; }
 button, input, textarea {
   font-feature-settings: "lnum" 1, "pnum" 1;

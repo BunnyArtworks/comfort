@@ -63,13 +63,18 @@ function syncPanelUnderlay(panel) {
   const underlay = panelUnderlay(panel);
   const layoutHeight = window.innerHeight;
   const visibleHeight = Math.max(0, panel.offsetHeight - layoutHeight);
-  const sheetTop = Math.max(0, layoutHeight - visibleHeight);
+  const restingTop = Math.max(0, layoutHeight - visibleHeight);
+  const panelTop = panel.classList.contains('open')
+    ? panel.getBoundingClientRect().top
+    : restingTop;
+  const documentTop = window.scrollY + Math.max(0, panelTop);
   const viewport = window.visualViewport;
-  const visualBottom = viewport ? viewport.offsetTop + viewport.height : layoutHeight;
-  const coveredBottom = Math.max(layoutHeight, visualBottom) + 320;
+  const visualBottom = window.scrollY + (viewport ? viewport.offsetTop + viewport.height : layoutHeight);
+  const layoutBottom = window.scrollY + layoutHeight;
+  const coveredBottom = Math.max(layoutBottom, visualBottom) + 480;
 
-  underlay.style.setProperty('--underlay-top', `${lockedScrollY + sheetTop}px`);
-  underlay.style.setProperty('--underlay-height', `${Math.max(visibleHeight + 320, coveredBottom - sheetTop)}px`);
+  underlay.style.setProperty('--underlay-top', `${documentTop}px`);
+  underlay.style.setProperty('--underlay-height', `${Math.max(visibleHeight + 480, coveredBottom - documentTop)}px`);
   underlay.style.setProperty('--underlay-closed-offset', `${visibleHeight + 64}px`);
 }
 
@@ -530,7 +535,11 @@ function closeFeedback() {
   closePanelUnderlay(feedbackSheet);
   feedbackSheet.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('feedback-open');
-  if (sheet.classList.contains('open')) showOverlay(false);
+  if (sheet.classList.contains('open')) {
+    syncPanelUnderlay(sheet);
+    requestAnimationFrame(() => syncPanelUnderlay(sheet));
+    showOverlay(false);
+  }
   else {
     hideOverlay();
     unlockPageScroll();
