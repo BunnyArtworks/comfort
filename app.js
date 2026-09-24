@@ -22,6 +22,7 @@ const feelingLabel = document.querySelector('#feeling-label');
 const hourlyTrack = document.querySelector('#main-hourly-track');
 const ratingControl = document.querySelector('.rating-control');
 const summary = document.querySelector('.summary');
+const legend = document.querySelector('.legend');
 const ratingNote = document.querySelector('.rating-note');
 const feedbackForm = document.querySelector('.feedback-form');
 const feedbackDone = document.querySelector('.feedback-done');
@@ -501,15 +502,27 @@ function hideOverlay() {
   }, 440);
 }
 
+function compactSheetContentHeight() {
+  const scrollRect = sheetScroll.getBoundingClientRect();
+  const legendRect = legend.getBoundingClientRect();
+  const paddingBottom = parseFloat(getComputedStyle(sheetScroll).paddingBottom) || 0;
+  return Math.ceil(legendRect.bottom - scrollRect.top + paddingBottom);
+}
+
 function updateSheetScrollMode() {
   if (!sheet.classList.contains('open') || sheet.classList.contains('expanded')) {
     sheetScroll.classList.remove('can-scroll');
     sheet.classList.remove('surface-dismiss');
     return;
   }
-  const canScroll = sheetScroll.scrollHeight - sheetScroll.clientHeight > 32;
+  const canScroll = compactSheetContentHeight() - sheetScroll.clientHeight > 32;
   sheetScroll.classList.toggle('can-scroll', canScroll);
   sheet.classList.toggle('surface-dismiss', !canScroll);
+}
+
+function updateCompactSheetHeight() {
+  if (sheet.classList.contains('expanded')) return;
+  sheet.style.setProperty('--compact-sheet-height', `${compactSheetContentHeight()}px`);
 }
 
 function openSheet() {
@@ -519,6 +532,7 @@ function openSheet() {
   });
   renderCondition();
   setBreakdownExpanded(false);
+  updateCompactSheetHeight();
   cancelPanelOpen(feedbackSheet);
   feedbackSheet.classList.remove('open');
   closePanelUnderlay(feedbackSheet);
@@ -622,6 +636,7 @@ breakdownToggle.addEventListener('click', () => {
 
 const finishBreakdownLayoutChange = event => {
   if (event.target !== breakdown || event.propertyName !== 'height') return;
+  updateCompactSheetHeight();
   updateSheetScrollMode();
   syncPanelUnderlay(sheet);
 };
@@ -721,6 +736,7 @@ window.addEventListener('blur', resetFeelingDrag);
 document.addEventListener('visibilitychange', resetFeelingDrag);
 window.addEventListener('resize', () => {
   updateFeeling();
+  updateCompactSheetHeight();
   updateSheetScrollMode();
   syncOpenUnderlays();
   positionChartTooltip();
@@ -735,7 +751,10 @@ if ('ResizeObserver' in window) {
 }
 window.visualViewport?.addEventListener('resize', syncOpenUnderlays);
 window.visualViewport?.addEventListener('scroll', syncOpenUnderlays);
-document.fonts?.ready.then(updateSheetScrollMode);
+document.fonts?.ready.then(() => {
+  updateCompactSheetHeight();
+  updateSheetScrollMode();
+});
 feedbackForm.addEventListener('submit', event => {
   event.preventDefault();
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();

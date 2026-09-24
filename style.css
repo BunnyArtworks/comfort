@@ -863,7 +863,9 @@ textarea,
   transition-delay: 0s;
 }
 .sheet {
-  --sheet-visible-height: min(756px, calc(100dvh - 32px));
+  --sheet-top-inset: 32px;
+  --compact-sheet-height: 756px;
+  --sheet-visible-height: min(var(--compact-sheet-height), calc(100dvh - var(--sheet-top-inset)));
   position: fixed;
   z-index: 21;
   left: 50%;
@@ -876,7 +878,7 @@ textarea,
   overflow: hidden;
   transition: transform .42s cubic-bezier(.2, .8, .2, 1), height .42s cubic-bezier(.2, .8, .2, 1);
 }
-.sheet.expanded { --sheet-visible-height: calc(100dvh - 32px); }
+.sheet.expanded { --sheet-visible-height: calc(100dvh - var(--sheet-top-inset)); }
 .sheet.open { transform: translate(-50%, 0); }
 .sheet > .grabber { z-index: 2; }
 .sheet:not(.open),
@@ -1134,7 +1136,7 @@ textarea,
   background: var(--soft);
   overflow: visible;
 }
-.chart-card > p { height: 40px; margin: 0 0 16px; padding-right: 16px; font-size: 16px; line-height: 20px; }
+.chart-card > p { display: none; }
 .chart-tooltip {
   position: absolute;
   z-index: 8;
@@ -1386,7 +1388,7 @@ body.feedback-open .feedback-dimmer {
 }
 
 @media (max-width: 375px) and (min-height: 760px) {
-  .sheet { --sheet-visible-height: min(784px, calc(100dvh - 16px)); }
+  .sheet { --sheet-top-inset: 16px; }
 }
 
 @media (max-width: 699px) {
