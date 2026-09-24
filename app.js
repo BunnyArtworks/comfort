@@ -427,7 +427,7 @@ function renderForecastList() {
         style="height:${Math.max(28, Math.min(96, Math.round(value)))}px;--bar-color:${colorHex[color(value)]}"></i>
     `).join('');
     const labels = [0, 6, 12, 18, 23].map(hour =>
-      `<span style="left:${hour / 23 * 100}%">${hour}</span>`
+      `<span data-hour="${hour}">${hour}</span>`
     ).join('');
 
     return `
@@ -453,6 +453,19 @@ function renderForecastList() {
         </div>
       </article>`;
   }).join('');
+  requestAnimationFrame(positionForecastTimeLabels);
+}
+
+function positionForecastTimeLabels() {
+  forecastList.querySelectorAll('.forecast-day').forEach(card => {
+    const timeline = card.querySelector('.forecast-times');
+    const timelineRect = timeline.getBoundingClientRect();
+    const bars = card.querySelectorAll('.forecast-bar');
+    timeline.querySelectorAll('span').forEach(label => {
+      const bar = bars[Number(label.dataset.hour)];
+      label.style.left = `${bar.getBoundingClientRect().left - timelineRect.left}px`;
+    });
+  });
 }
 
 function forecastChip(icon, text, tone, extraClass = '') {
@@ -1057,6 +1070,7 @@ window.addEventListener('resize', () => {
   updateFeeling();
   updateCompactSheetHeight();
   updateSheetScrollMode();
+  requestAnimationFrame(positionForecastTimeLabels);
   syncOpenUnderlays();
   positionChartTooltip();
 });

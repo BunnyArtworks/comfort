@@ -687,14 +687,14 @@ textarea,
 .pressure-segment-a > span { transform: rotate(135deg); }
 .pressure-segment-a img { top: 50%; right: 0; bottom: .66%; left: 56%; width: 27.634px; height: 31.016px; }
 .pressure-segment-b > span { transform: rotate(-135deg); }
-.pressure-segment-b img { top: 50%; right: 0; bottom: .25%; left: 53.01%; width: 27.634px; height: 31.016px; }
+.pressure-segment-b img { top: 50%; right: 0; bottom: .25%; left: 53.01%; width: 29.514px; height: 31.27px; }
 .pressure-segment-c {
   top: -12.66px;
   width: 88.776px;
   height: 88.776px;
 }
 .pressure-segment-c > span { transform: rotate(-42deg); }
-.pressure-segment-c img { top: 50%; right: 0; bottom: .66%; left: 56%; width: 29.514px; height: 31.27px; }
+.pressure-segment-c img { top: 50%; right: 0; bottom: .66%; left: 56%; width: 27.634px; height: 31.016px; }
 .pressure .gauge-dot { top: -1.61px; left: 28.45px; }
 .pressure b { font-size: 17.778px; line-height: 21.333px; }
 .pressure small { font-size: 8.889px; line-height: 10.667px; }
@@ -707,11 +707,19 @@ textarea,
 .moon-gauge i {
   position: absolute;
   top: -6.43px;
-  right: auto;
-  left: 8px;
+  right: -15px;
   display: block;
   width: 60.61px;
   height: 72.86px;
+  overflow: visible;
+  -webkit-mask-image: url("assets/moon-mask-exact.svg");
+  -webkit-mask-position: -72.391px -47.572px;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 176px 176px;
+  mask-image: url("assets/moon-mask-exact.svg");
+  mask-position: -72.391px -47.572px;
+  mask-repeat: no-repeat;
+  mask-size: 176px 176px;
   transform: scaleX(-1);
 }
 .moon-gauge img { position: absolute; top: -8px; left: -8px; width: 76.609px; height: 88.857px; }
@@ -1352,9 +1360,7 @@ textarea,
   font-weight: 400;
   line-height: 16px;
 }
-.forecast-times span { position: absolute; top: 0; transform: translateX(-50%); }
-.forecast-times span:first-child { left: 0 !important; transform: none; }
-.forecast-times span:last-child { transform: translateX(-100%); }
+.forecast-times span { position: absolute; top: 0; white-space: nowrap; }
 .forecast-legend {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 150px));
@@ -1627,6 +1633,47 @@ body.feedback-open .feedback-dimmer {
 @keyframes sheet-content-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Continuous iOS-like corners where the engine supports CSS superellipses. */
+@supports (corner-shape: squircle) {
+  .map-settings,
+  .map-search,
+  .map-button,
+  .suggestions-track button,
+  .hourly-group::before,
+  .parameter-card,
+  .ten-day-card,
+  .month-forecast,
+  .speech-entry,
+  .sheet,
+  .rating-control,
+  .breakdown,
+  .days button,
+  .bar,
+  .chart-card,
+  .chart-tooltip,
+  .forecast-day,
+  .forecast-bar,
+  .forecast-tooltip,
+  .forecast-chip,
+  .feedback-sheet,
+  .feeling-track,
+  .feeling-fill,
+  .feeling-slider input,
+  .feedback-form textarea,
+  .feedback-submit,
+  .feedback-done {
+    corner-shape: squircle;
+  }
+
+  .feeling-slider input::-webkit-slider-thumb {
+    corner-shape: squircle;
+  }
+
+  .feeling-slider input::-moz-range-thumb {
+    corner-shape: squircle;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
