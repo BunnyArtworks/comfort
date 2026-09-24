@@ -11,7 +11,7 @@
   <link rel="preload" href="assets/ys-text-bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/ys-text-heavy.woff2" as="font" type="font/woff2" crossorigin>
   <title>Погода — индекс комфортности</title>
-  <link rel="stylesheet" href="style.css?v=20260924-23">
+  <link rel="stylesheet" href="style.css?v=20260924-24">
 </head>
 <body>
   <main class="phone" id="app" data-condition="good">
@@ -222,7 +222,7 @@
       <div class="grabber"></div>
       <div class="sheet-scroll">
         <section class="summary">
-          <div class="score-gauge" id="score-gauge" role="img" aria-label="96 из 100">
+          <button class="score-gauge" id="score-gauge" type="button" aria-label="96 из 100. Переключить формат прогноза" aria-pressed="false">
             <span class="score-exact score-exact-good" aria-hidden="true">
               <img src="assets/score-track-figma.svg" alt="">
               <img src="assets/score-96-figma.svg" alt="">
@@ -233,7 +233,7 @@
             </svg>
             <span id="score-value">96</span>
             <small>из 100</small>
-          </div>
+          </button>
           <div class="rating-control">
             <img src="assets/rating.svg" alt="">
             <span class="rating-selection" aria-hidden="true"><img src="assets/rating.svg" alt=""></span>
@@ -291,6 +291,8 @@
           <span><i class="orange"></i>30–49, неприятно</span>
           <span><i class="red"></i>0–29, лучше дома</span>
         </section>
+
+        <section class="forecast-list" id="forecast-list" aria-label="Прогноз комфортности на пять дней" aria-hidden="true"></section>
       </div>
       <div class="feedback-dimmer" aria-hidden="true"></div>
       <aside class="feedback-sheet" aria-hidden="true" aria-label="Оценка погоды">
@@ -318,6 +320,6 @@
       </aside>
     </aside>
   </main>
-  <script src="app.js?v=20260924-19"></script>
+  <script src="app.js?v=20260924-20"></script>
 </body>
 </html>

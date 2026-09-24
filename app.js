@@ -23,6 +23,7 @@ const hourlyTrack = document.querySelector('#main-hourly-track');
 const ratingControl = document.querySelector('.rating-control');
 const summary = document.querySelector('.summary');
 const legend = document.querySelector('.legend');
+const forecastList = document.querySelector('#forecast-list');
 const ratingNote = document.querySelector('.rating-note');
 const feedbackForm = document.querySelector('.feedback-form');
 const feedbackDone = document.querySelector('.feedback-done');
@@ -34,6 +35,8 @@ let selectedDay = 0;
 let selectedHour = null;
 let lockedScrollY = 0;
 let tooltipPositionFrame = 0;
+let forecastPointer = null;
+let forecastHideTimer = 0;
 const panelOpenFrames = new WeakMap();
 const underlayHideTimers = new WeakMap();
 
@@ -197,6 +200,51 @@ const fullDays = [
   [58, 55, 52, 50, 54, 60, 68, 75, 81, 85, 87, 84, 80, 77, 73, 69, 65, 62, 64, 68, 72, 70, 66, 62]
 ];
 
+const forecastValues = {
+  good: [
+    todayGood,
+    [92, 91, 90, 88, 86, 84, 82, 82, 80, 76, 72, 70, 70, 70, 74, 78, 82, 85, 90, 92, 93, 91, 88, 86],
+    [94, 95, 94, 93, 92, 90, 88, 87, 86, 86, 86, 87, 90, 92, 94, 95, 94, 93, 92, 91, 90, 87, 86, 85],
+    [88, 86, 84, 70, 66, 62, 56, 48, 40, 34, 30, 28, 26, 30, 38, 46, 54, 60, 64, 68, 76, 82, 84, 83],
+    [90, 90, 89, 88, 88, 86, 84, 80, 76, 70, 66, 60, 56, 52, 50, 52, 58, 64, 70, 74, 78, 86, 88, 89]
+  ],
+  bad: [
+    todayBad,
+    [62, 60, 58, 56, 54, 52, 50, 48, 44, 40, 36, 34, 32, 34, 38, 44, 52, 60, 68, 74, 78, 76, 70, 66],
+    [76, 78, 80, 82, 84, 86, 84, 82, 80, 78, 76, 74, 76, 80, 84, 86, 88, 86, 84, 82, 80, 78, 76, 74],
+    [44, 42, 40, 36, 32, 28, 24, 22, 20, 18, 18, 20, 24, 28, 34, 40, 46, 52, 58, 64, 70, 74, 72, 68],
+    [68, 70, 72, 74, 72, 68, 64, 58, 52, 48, 42, 38, 34, 36, 42, 48, 54, 62, 68, 74, 80, 82, 78, 74]
+  ]
+};
+
+const forecastDays = [
+  {
+    title: 'Сегодня',
+    good: 'День с характером: утром легко, вечером снова комфортно',
+    bad: 'Дождливый день — комфортное окно откроется вечером'
+  },
+  {
+    title: 'Завтра',
+    good: 'Спокойный день — лёгкий ветер напомнит о себе после обеда',
+    bad: 'День не для долгих прогулок — вечером будет приятнее'
+  },
+  {
+    title: '14 августа, ср',
+    good: 'Почти лучший день в году — можно гулять без плана',
+    bad: 'Самый приятный день недели для прогулок'
+  },
+  {
+    title: '15 августа, чт',
+    good: 'День для уютных планов — выходить лучше ближе к вечеру',
+    bad: 'Погода берёт паузу — вечером станет заметно спокойнее'
+  },
+  {
+    title: '16 августа, пт',
+    good: 'Утро и поздний вечер особенно хороши для прогулки',
+    bad: 'Лучше всего выйти утром или после 20:00'
+  }
+];
+
 const chartCopy = [
   () => condition === 'good'
     ? 'Комфортно до 11:00, после этого условия ухудшатся из-за грозы до 21:00'
@@ -257,12 +305,12 @@ function tooltipDetails(day, hour, value) {
 
   const daylight = hour >= 8 && hour <= 18;
   const feels = Math.round(7 + value * .12 + (daylight ? 3 : 0) + Math.sin((hour - 6) / 24 * Math.PI * 2) * 4);
-  const wind = Math.min(19, Math.max(3, Math.round(3 + (100 - value) * .32)));
+  const wind = Math.min(19, Math.max(3, Math.round(3 + Math.max(0, 70 - value) * .35)));
   const rainNow = day === 0
     ? condition === 'bad' ? hour < 18 : hour >= 11 && hour <= 16 && hour !== 14
     : value < 38;
   const thunder = day === 0 && condition === 'good' && hour >= 11 && hour <= 13;
-  const uvValue = daylight ? Math.max(0, Math.round(5 - Math.abs(13 - hour) * .8)) : 0;
+  const uvValue = daylight ? Math.max(0, Math.round(9 - Math.abs(13 - hour) * .8)) : 0;
   const danger = thunder ? 'гроза' : wind >= 12 ? 'ветер' : 'нет';
   const feelIcon = value >= 80 ? 'status-green.svg' : value >= 50 ? 'status-yellow.svg' : 'tooltip-status-orange.svg';
   const windIcon = wind >= 12 ? 'tooltip-status-orange.svg' : wind >= 7 ? 'status-yellow.svg' : 'status-green.svg';
@@ -271,7 +319,7 @@ function tooltipDetails(day, hour, value) {
   return [
     [`${feels}°`, feelIcon],
     [`${wind} м/с`, windIcon],
-    [rainNow ? thunder ? 'гроза' : 'дождь' : 'сухо', rainNow ? 'tooltip-status-orange.svg' : 'status-green.svg'],
+    [rainNow ? 'дождь' : 'сухо', rainNow ? 'tooltip-status-orange.svg' : 'status-green.svg'],
     [`${uvValue}, ${uvValue <= 2 ? 'низкий' : uvValue <= 5 ? 'средний' : 'высокий'}`, uvIcon],
     [danger, danger === 'нет' ? 'status-green.svg' : 'status-yellow.svg']
   ];
@@ -362,6 +410,175 @@ function renderDayStrips() {
   });
 }
 
+function forecastLegendMarkup() {
+  return `
+    <div class="forecast-legend" aria-label="Легенда индекса">
+      <span><i style="--legend-color:${colorHex.green}"></i>80–100, комфортно</span>
+      <span><i style="--legend-color:${colorHex.yellow}"></i>50–79, нормально</span>
+      <span><i style="--legend-color:${colorHex.orange}"></i>30–49, неприятно</span>
+      <span><i style="--legend-color:${colorHex.red}"></i>0–29, лучше дома</span>
+    </div>`;
+}
+
+function renderForecastList() {
+  const days = forecastValues[condition];
+  forecastList.innerHTML = forecastDays.map((day, dayIndex) => {
+    const values = days[dayIndex];
+    const barsMarkup = values.map((value, hour) => `
+      <i class="forecast-bar" data-hour="${hour}" data-value="${value}"
+        style="height:${Math.max(28, Math.min(96, Math.round(value)))}px;--bar-color:${colorHex[color(value)]}"></i>
+    `).join('');
+    const labels = [0, 6, 12, 18, 23].map(hour =>
+      `<span style="left:${hour / 23 * 100}%">${hour}</span>`
+    ).join('');
+
+    return `
+      <article class="forecast-day" data-day="${dayIndex}">
+        <header class="forecast-day-header">
+          <h2>${day.title}</h2>
+          <p>${day[condition]}</p>
+        </header>
+        <div class="forecast-chart" aria-label="${day.title}: интерактивный почасовой график комфортности">
+          <div class="forecast-bars">${barsMarkup}</div>
+          <div class="forecast-times" aria-hidden="true">${labels}</div>
+        </div>
+        ${dayIndex === 0 ? forecastLegendMarkup() : ''}
+        <div class="forecast-tooltip" role="tooltip" aria-hidden="true">
+          <div class="forecast-tooltip-head">
+            <span class="forecast-tooltip-hour">11:00</span>
+            <span class="forecast-tooltip-score"><b>64</b><small>/100</small><i></i></span>
+          </div>
+          <div class="forecast-tooltip-chips"></div>
+          <img class="forecast-tooltip-tail" src="assets/new-tooltip-tail.svg" alt="">
+        </div>
+      </article>`;
+  }).join('');
+}
+
+function forecastChip(icon, text, tone, extraClass = '') {
+  return `<span class="forecast-chip ${tone} ${extraClass}"><i class="forecast-chip-icon"><img src="assets/${icon}" alt=""></i>${text}</span>`;
+}
+
+function forecastTooltipData(day, hour, value) {
+  const details = tooltipDetails(day, hour, value);
+  const feels = details[0][0];
+  const wind = details[1][0];
+  const rain = details[2][0];
+  const uv = details[3][0].split(',')[0];
+  const danger = details[4][0];
+  const windSpeed = Number.parseInt(wind, 10) || 0;
+  const uvValue = Number.parseInt(uv, 10) || 0;
+  const temperatureTone = value >= 70 ? 'green' : value >= 45 ? 'yellow' : 'red';
+  const windTone = windSpeed <= 3 ? 'green' : windSpeed <= 8 ? 'yellow' : 'orange';
+  const rainTone = rain === 'сухо' ? 'green' : 'red';
+  const dangerText = danger === 'нет' ? 'без опасностей' : danger;
+  const dangerTone = danger === 'нет' ? 'green' : 'orange';
+
+  return [
+    forecastChip('new-tooltip-temperature.svg', feels, temperatureTone),
+    forecastChip('new-tooltip-wind.svg', wind, windTone),
+    forecastChip('new-tooltip-rain.svg', rain, rainTone),
+    forecastChip('new-tooltip-uv.svg', `УФ ${uvValue}`, uvValue <= 2 ? 'green' : uvValue <= 5 ? 'yellow' : 'red'),
+    forecastChip('new-tooltip-warning.svg', dangerText, dangerTone, 'warning')
+  ].join('');
+}
+
+function forecastBarAt(chart, clientX) {
+  const allBars = [...chart.querySelectorAll('.forecast-bar')];
+  let best = allBars[0];
+  let bestDistance = Infinity;
+  allBars.forEach(bar => {
+    const rect = bar.getBoundingClientRect();
+    const distance = Math.abs(clientX - (rect.left + rect.width / 2));
+    if (distance < bestDistance) {
+      best = bar;
+      bestDistance = distance;
+    }
+  });
+  return best;
+}
+
+function positionForecastTooltip(card, bar) {
+  const tooltip = card.querySelector('.forecast-tooltip');
+  const chartBars = card.querySelector('.forecast-bars');
+  const cardRect = card.getBoundingClientRect();
+  const barRect = bar.getBoundingClientRect();
+  const barsRect = chartBars.getBoundingClientRect();
+  const tooltipWidth = tooltip.offsetWidth;
+  const anchorX = barRect.left + barRect.width / 2 - cardRect.left;
+  const left = Math.min(cardRect.width - tooltipWidth - 8, Math.max(8, anchorX - tooltipWidth / 2));
+  const tailX = Math.min(tooltipWidth - 29, Math.max(29, anchorX - left));
+  const top = barsRect.bottom - cardRect.top - 276;
+  tooltip.style.setProperty('--tooltip-left', `${Math.round(left)}px`);
+  tooltip.style.setProperty('--tooltip-top', `${Math.round(top)}px`);
+  tooltip.style.setProperty('--tooltip-tail-x', `${Math.round(tailX)}px`);
+}
+
+function showForecastTooltip(chart, clientX) {
+  window.clearTimeout(forecastHideTimer);
+  const card = chart.closest('.forecast-day');
+  const bar = forecastBarAt(chart, clientX);
+  if (!card || !bar) return;
+  const day = Number(card.dataset.day);
+  const hour = Number(bar.dataset.hour);
+  const value = Number(bar.dataset.value);
+  const tooltip = card.querySelector('.forecast-tooltip');
+  const alreadySelected = Number(card.dataset.selectedHour) === hour;
+
+  forecastList.querySelectorAll('.forecast-day.is-interacting').forEach(other => {
+    if (other !== card) hideForecastTooltip(other);
+  });
+
+  card.dataset.selectedHour = String(hour);
+  card.classList.add('is-interacting');
+  card.querySelectorAll('.forecast-bar').forEach(candidate => {
+    const distance = Math.abs(Number(candidate.dataset.hour) - hour);
+    const opacity = distance === 0 ? 1 : distance === 1 ? .72 : distance === 2 ? .48 : distance === 3 ? .3 : .18;
+    candidate.style.setProperty('--focus-opacity', opacity);
+    candidate.classList.toggle('is-current', distance === 0);
+  });
+
+  if (!alreadySelected) {
+    tooltip.querySelector('.forecast-tooltip-hour').textContent = `${hour}:00`;
+    tooltip.querySelector('.forecast-tooltip-score b').textContent = value;
+    tooltip.querySelector('.forecast-tooltip-score').style.setProperty('--tooltip-dot', colorHex[color(value)]);
+    tooltip.querySelector('.forecast-tooltip-chips').innerHTML = forecastTooltipData(day, hour, value);
+  }
+  tooltip.setAttribute('aria-hidden', 'false');
+  positionForecastTooltip(card, bar);
+  requestAnimationFrame(() => tooltip.classList.add('is-visible'));
+}
+
+function hideForecastTooltip(card = null) {
+  const cards = card ? [card] : [...forecastList.querySelectorAll('.forecast-day')];
+  cards.forEach(dayCard => {
+    dayCard.classList.remove('is-interacting');
+    delete dayCard.dataset.selectedHour;
+    dayCard.querySelectorAll('.forecast-bar').forEach(bar => {
+      bar.style.removeProperty('--focus-opacity');
+      bar.classList.remove('is-current');
+    });
+    const tooltip = dayCard.querySelector('.forecast-tooltip');
+    tooltip?.classList.remove('is-visible');
+    tooltip?.setAttribute('aria-hidden', 'true');
+  });
+}
+
+function setForecastListView(active) {
+  hideForecastTooltip();
+  forecastPointer = null;
+  setBreakdownExpanded(false);
+  sheet.classList.toggle('forecast-list-view', active);
+  scoreGauge.setAttribute('aria-pressed', String(active));
+  forecastList.setAttribute('aria-hidden', String(!active));
+  sheetScroll.scrollTo({ top: 0, behavior: 'auto' });
+  if (!active) updateCompactSheetHeight();
+  requestAnimationFrame(() => {
+    updateSheetScrollMode();
+    syncPanelUnderlay(sheet);
+  });
+}
+
 function weatherIcon(type) {
   if (!type) return '<span class="weather-icon" aria-hidden="true"></span>';
   if (type === 'sun') {
@@ -434,7 +651,7 @@ function renderCondition() {
   document.body.dataset.condition = condition;
   document.documentElement.dataset.condition = condition;
   scoreValue.textContent = data.score;
-  scoreGauge.setAttribute('aria-label', `${data.score} из 100`);
+  scoreGauge.setAttribute('aria-label', `${data.score} из 100. Переключить формат прогноза`);
   scoreGauge.style.setProperty('--score-color', data.scoreColor);
   scoreProgress.style.strokeDasharray = `${data.score} ${100 - data.score}`;
   document.querySelector('#sheet-title').textContent = data.title;
@@ -455,6 +672,7 @@ function renderCondition() {
   renderMainHourly();
   renderDayStrips();
   renderChart();
+  renderForecastList();
 }
 
 function selectDay(day) {
@@ -510,6 +728,11 @@ function compactSheetContentHeight() {
 }
 
 function updateSheetScrollMode() {
+  if (sheet.classList.contains('forecast-list-view')) {
+    sheetScroll.classList.add('can-scroll');
+    sheet.classList.remove('surface-dismiss');
+    return;
+  }
   if (!sheet.classList.contains('open') || sheet.classList.contains('expanded')) {
     sheetScroll.classList.remove('can-scroll');
     sheet.classList.remove('surface-dismiss');
@@ -521,11 +744,12 @@ function updateSheetScrollMode() {
 }
 
 function updateCompactSheetHeight() {
-  if (sheet.classList.contains('expanded')) return;
+  if (sheet.classList.contains('expanded') || sheet.classList.contains('forecast-list-view')) return;
   sheet.style.setProperty('--compact-sheet-height', `${compactSheetContentHeight()}px`);
 }
 
 function openSheet() {
+  setForecastListView(false);
   selectedDay = 0;
   document.querySelectorAll('.days button').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.day) === 0);
@@ -586,6 +810,7 @@ function closeFeedback() {
 
 function closeSheet() {
   hideChartTooltip(true);
+  hideForecastTooltip();
   dismissCommentKeyboard();
   resetFeelingDrag();
   cancelPanelOpen(sheet);
@@ -611,7 +836,74 @@ bars.addEventListener('click', event => {
   if (!bar) return;
   showChartTooltip(Number(bar.dataset.hour));
 });
+scoreGauge.addEventListener('click', () => {
+  setForecastListView(!sheet.classList.contains('forecast-list-view'));
+});
+
+forecastList.addEventListener('pointerdown', event => {
+  const chart = event.target.closest('.forecast-chart');
+  if (!chart || (event.pointerType === 'mouse' && event.button !== 0)) return;
+  forecastPointer = {
+    id: event.pointerId,
+    type: event.pointerType,
+    chart,
+    startX: event.clientX,
+    startY: event.clientY,
+    dragging: event.pointerType === 'mouse'
+  };
+  showForecastTooltip(chart, event.clientX);
+});
+
+forecastList.addEventListener('pointermove', event => {
+  const hoveredChart = event.target.closest('.forecast-chart');
+  if (event.pointerType === 'mouse' && (!forecastPointer || forecastPointer.id !== event.pointerId)) {
+    if (hoveredChart) showForecastTooltip(hoveredChart, event.clientX);
+    return;
+  }
+  if (!forecastPointer || forecastPointer.id !== event.pointerId) return;
+  const deltaX = event.clientX - forecastPointer.startX;
+  const deltaY = event.clientY - forecastPointer.startY;
+  if (!forecastPointer.dragging) {
+    if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) return;
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      hideForecastTooltip(forecastPointer.chart.closest('.forecast-day'));
+      forecastPointer = null;
+      return;
+    }
+    forecastPointer.dragging = true;
+    try { forecastPointer.chart.setPointerCapture(event.pointerId); } catch {}
+  }
+  showForecastTooltip(forecastPointer.chart, event.clientX);
+  event.preventDefault();
+}, { passive: false });
+
+forecastList.addEventListener('pointerout', event => {
+  if (event.pointerType !== 'mouse' || forecastPointer) return;
+  const chart = event.target.closest('.forecast-chart');
+  if (!chart || chart.contains(event.relatedTarget)) return;
+  hideForecastTooltip(chart.closest('.forecast-day'));
+});
+
+const finishForecastPointer = event => {
+  if (!forecastPointer || forecastPointer.id !== event.pointerId) return;
+  const { chart, type } = forecastPointer;
+  try {
+    if (chart.hasPointerCapture(event.pointerId)) chart.releasePointerCapture(event.pointerId);
+  } catch {}
+  forecastPointer = null;
+  if (type !== 'mouse') {
+    forecastHideTimer = window.setTimeout(() => hideForecastTooltip(chart.closest('.forecast-day')), 420);
+  }
+};
+forecastList.addEventListener('pointerup', finishForecastPointer);
+forecastList.addEventListener('pointercancel', event => {
+  finishForecastPointer(event);
+  hideForecastTooltip();
+});
 plotScroll.addEventListener('scroll', positionChartTooltip, { passive: true });
+sheetScroll.addEventListener('scroll', () => {
+  if (sheet.classList.contains('forecast-list-view')) hideForecastTooltip();
+}, { passive: true });
 document.addEventListener('pointerdown', event => {
   if (selectedHour === null || event.target.closest('.bar')) return;
   hideChartTooltip();
