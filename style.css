@@ -96,8 +96,7 @@ textarea,
 .weather-screen {
   position: relative;
   width: 100%;
-  height: auto;
-  aspect-ratio: 393 / 1683;
+  height: calc(193.64cqw + 922px);
   container-type: inline-size;
   overflow: hidden;
   isolation: isolate;
@@ -227,7 +226,7 @@ textarea,
 .ten-day-forecast {
   position: absolute;
   z-index: 2;
-  top: 242.49cqw;
+  top: calc(193.64cqw + 192px);
   left: 0;
   width: 100%;
   padding: 0 16px;
@@ -1227,8 +1226,7 @@ textarea,
 @media (max-width: 699px) {
   .weather-screen {
     --mobile-top-shift: calc(env(safe-area-inset-top, 0px) - 48px);
-    height: calc(451.65cqw + var(--mobile-top-shift));
-    aspect-ratio: auto;
+    height: calc(193.64cqw + var(--mobile-top-shift) + 922px);
   }
   .status-bar { display: none; }
   .weather-screen::before { display: none; }
@@ -1241,7 +1239,7 @@ textarea,
   .map-button { top: calc(27.99cqw + var(--mobile-top-shift)); }
   .hero-art, .speech-entry { top: calc(52.42cqw + var(--mobile-top-shift)); }
   .ad-art { top: calc(156.23cqw + var(--mobile-top-shift)); }
-  .forecast-art { top: calc(242.49cqw + var(--mobile-top-shift)); }
+  .ten-day-forecast { top: calc(193.64cqw + var(--mobile-top-shift) + 192px); }
   .suggestions-carousel { top: calc(111.45cqw + var(--mobile-top-shift)); }
   .hourly-carousel { top: calc(124.68cqw + var(--mobile-top-shift)); }
   .cards-carousel { top: calc(193.64cqw + var(--mobile-top-shift)); }
