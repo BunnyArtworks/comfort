@@ -1619,46 +1619,6 @@ body.feedback-open .feedback-dimmer {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Continuous iOS-like corners where the engine supports CSS superellipses. */
-@supports (corner-shape: squircle) {
-  .map-settings,
-  .map-search,
-  .map-button,
-  .suggestions-track button,
-  .hourly-group::before,
-  .parameter-card,
-  .ten-day-card,
-  .month-forecast,
-  .speech-entry,
-  .sheet,
-  .rating-control,
-  .breakdown,
-  .days button,
-  .bar,
-  .chart-card,
-  .chart-tooltip,
-  .forecast-day,
-  .forecast-bar,
-  .forecast-chip,
-  .feedback-sheet,
-  .feeling-track,
-  .feeling-fill,
-  .feeling-slider input,
-  .feedback-form textarea,
-  .feedback-submit,
-  .feedback-done {
-    corner-shape: squircle;
-  }
-
-  .feeling-slider input::-webkit-slider-thumb {
-    corner-shape: squircle;
-  }
-
-  .feeling-slider input::-moz-range-thumb {
-    corner-shape: squircle;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .score-gauge.is-animating .score-exact img:last-child,
   .score-gauge.is-animating .score-progress,
