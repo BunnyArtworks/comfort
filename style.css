@@ -1251,14 +1251,13 @@ textarea,
 
 .legend {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 8px 12px;
   padding: 18px 24px 12px;
   font-size: 14px;
   line-height: 18px;
 }
 .legend span { min-width: 0; white-space: normal; }
-.legend span:nth-child(4) { grid-column: 1 / -1; }
 .legend i { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; }
 
 .feedback-sheet {
