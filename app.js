@@ -34,6 +34,7 @@ let selectedHour = null;
 let lockedScrollY = 0;
 let tooltipPositionFrame = 0;
 const panelOpenFrames = new WeakMap();
+const underlayHideTimers = new WeakMap();
 
 function lockPageScroll() {
   if (document.body.classList.contains('is-scroll-locked')) return;
@@ -85,13 +86,24 @@ function syncOpenUnderlays() {
 
 function closePanelUnderlay(panel) {
   const underlay = panelUnderlay(panel);
+  const pendingHide = underlayHideTimers.get(underlay);
+  if (pendingHide) clearTimeout(pendingHide);
   underlay.classList.remove('open');
   underlay.style.removeProperty('transition');
   underlay.style.removeProperty('transform');
+  const hideTimer = window.setTimeout(() => {
+    if (!underlay.classList.contains('open')) underlay.hidden = true;
+    underlayHideTimers.delete(underlay);
+  }, 440);
+  underlayHideTimers.set(underlay, hideTimer);
 }
 
 function openPanelFromBottom(panel) {
   const underlay = panelUnderlay(panel);
+  const pendingHide = underlayHideTimers.get(underlay);
+  if (pendingHide) clearTimeout(pendingHide);
+  underlayHideTimers.delete(underlay);
+  underlay.hidden = false;
   cancelPanelOpen(panel);
   clearPanelDrag(panel);
   syncPanelUnderlay(panel);
