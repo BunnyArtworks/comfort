@@ -651,17 +651,5 @@ function attachDismissGesture(panel, closePanel) {
 attachDismissGesture(sheet, closeSheet);
 attachDismissGesture(feedbackSheet, closeFeedback);
 
-let dimFrame = 0;
-function updateBackgroundDim() {
-  cancelAnimationFrame(dimFrame);
-  dimFrame = requestAnimationFrame(() => {
-    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-    const dim = Math.min(Math.max(scrollTop - 48, 0) / 640 * .18, .18);
-    document.documentElement.style.setProperty('--bg-dim', dim.toFixed(3));
-  });
-}
-window.addEventListener('scroll', updateBackgroundDim, { passive: true });
-
 renderCondition();
 updateFeeling();
-updateBackgroundDim();

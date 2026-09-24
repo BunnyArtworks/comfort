@@ -48,7 +48,6 @@
 [hidden] { display: none !important; }
 html, body { margin: 0; min-height: 100%; touch-action: pan-x pan-y; }
 html {
-  --bg-dim: 0;
   min-height: 100dvh;
   background: #3e8cdd url("assets/main-bg-source.png") center / cover fixed no-repeat;
   overscroll-behavior-y: none;
@@ -67,16 +66,6 @@ body {
 html.is-scroll-locked,
 body.is-scroll-locked { overflow: hidden; overscroll-behavior: none; }
 body.is-scroll-locked { width: 100%; }
-body::before {
-  content: "";
-  position: fixed;
-  z-index: 10;
-  inset: -256px 0;
-  pointer-events: none;
-  background: #11182d;
-  opacity: var(--bg-dim);
-  transition: opacity .12s linear;
-}
 button, input, textarea {
   font-feature-settings: "lnum" 1, "pnum" 1;
   font-variant-numeric: lining-nums proportional-nums;
@@ -94,7 +83,6 @@ textarea,
 .days button:focus { outline: none; }
 
 .phone {
-  --bg-dim: 0;
   width: 100%;
   max-width: 640px;
   min-height: 100dvh;
