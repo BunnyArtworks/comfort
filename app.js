@@ -220,28 +220,28 @@ const forecastValues = {
 const forecastDays = [
   {
     title: 'Сегодня',
-    good: 'День с характером: утром легко, вечером снова комфортно',
-    bad: 'Дождливый день — комфортное окно откроется вечером'
+    good: 'Комфортно до 11:00 и снова с 22:00 — для поздней прогулки',
+    bad: 'Дождливый день — комфортное окно с 18:00 до 22:00'
   },
   {
     title: 'Завтра',
-    good: 'Спокойный день — лёгкий ветер напомнит о себе после обеда',
-    bad: 'День не для долгих прогулок — вечером будет приятнее'
+    good: 'Комфортно до 9:00 и снова после 16:00',
+    bad: 'Для прогулки лучше выбрать время после 18:00'
   },
   {
     title: '14 августа, ср',
     good: 'Почти лучший день в году — можно гулять без плана',
-    bad: 'Самый приятный день недели для прогулок'
+    bad: 'Самый приятный день недели — комфортно почти весь день'
   },
   {
     title: '15 августа, чт',
-    good: 'День для уютных планов — выходить лучше ближе к вечеру',
-    bad: 'Погода берёт паузу — вечером станет заметно спокойнее'
+    good: 'Для прогулки лучше выбрать время после 21:00',
+    bad: 'День для уютных планов — спокойнее станет после 18:00'
   },
   {
     title: '16 августа, пт',
-    good: 'Утро и поздний вечер особенно хороши для прогулки',
-    bad: 'Лучше всего выйти утром или после 20:00'
+    good: 'Комфортно до 8:00 и снова после 21:00',
+    bad: 'Для прогулки лучше выбрать время до 9:00 или после 18:00'
   }
 ];
 
@@ -449,14 +449,14 @@ function renderForecastList() {
             <span class="forecast-tooltip-score"><b>64</b><small>/100</small><i></i></span>
           </div>
           <div class="forecast-tooltip-chips"></div>
-          <img class="forecast-tooltip-tail" src="assets/new-tooltip-tail.svg" alt="">
         </div>
+        <svg class="forecast-tooltip-connector" viewBox="0 0 353 120" preserveAspectRatio="none" aria-hidden="true"><path></path></svg>
       </article>`;
   }).join('');
 }
 
 function forecastChip(icon, text, tone, extraClass = '') {
-  return `<span class="forecast-chip ${tone} ${extraClass}"><i class="forecast-chip-icon"><img src="assets/${icon}" alt=""></i>${text}</span>`;
+  return `<span class="forecast-chip ${tone} ${extraClass}"><i class="forecast-chip-icon" style="--chip-icon:url('assets/${icon}')"></i>${text}</span>`;
 }
 
 function forecastTooltipData(day, hour, value) {
@@ -471,16 +471,17 @@ function forecastTooltipData(day, hour, value) {
   const temperatureTone = value >= 70 ? 'green' : value >= 45 ? 'yellow' : 'red';
   const windTone = windSpeed <= 3 ? 'green' : windSpeed <= 8 ? 'yellow' : 'orange';
   const rainTone = rain === 'сухо' ? 'green' : 'red';
-  const dangerText = danger === 'нет' ? 'без опасностей' : danger;
+  const dangerText = danger === 'нет' ? 'безопасно' : danger;
   const dangerTone = danger === 'нет' ? 'green' : 'orange';
 
-  return [
+  const chips = [
     forecastChip('new-tooltip-temperature.svg', feels, temperatureTone),
     forecastChip('new-tooltip-wind.svg', wind, windTone),
     forecastChip('new-tooltip-rain.svg', rain, rainTone),
     forecastChip('new-tooltip-uv.svg', `УФ ${uvValue}`, uvValue <= 2 ? 'green' : uvValue <= 5 ? 'yellow' : 'red'),
     forecastChip('new-tooltip-warning.svg', dangerText, dangerTone, 'warning')
-  ].join('');
+  ];
+  return `<span class="forecast-tooltip-chip-row">${[chips[0], chips[1], chips[3]].join('')}</span><span class="forecast-tooltip-chip-row">${[chips[2], chips[4]].join('')}</span>`;
 }
 
 function forecastBarAt(chart, clientX) {
@@ -500,6 +501,7 @@ function forecastBarAt(chart, clientX) {
 
 function positionForecastTooltip(card, bar) {
   const tooltip = card.querySelector('.forecast-tooltip');
+  const connector = card.querySelector('.forecast-tooltip-connector');
   const chartBars = card.querySelector('.forecast-bars');
   const cardRect = card.getBoundingClientRect();
   const barRect = bar.getBoundingClientRect();
@@ -507,11 +509,29 @@ function positionForecastTooltip(card, bar) {
   const tooltipWidth = tooltip.offsetWidth;
   const anchorX = barRect.left + barRect.width / 2 - cardRect.left;
   const left = Math.min(cardRect.width - tooltipWidth - 8, Math.max(8, anchorX - tooltipWidth / 2));
-  const tailX = Math.min(tooltipWidth - 29, Math.max(29, anchorX - left));
+  const cornerRadius = 32;
+  const connectorHalfWidth = 29;
+  const attachmentX = Math.min(
+    left + tooltipWidth - cornerRadius - connectorHalfWidth,
+    Math.max(left + cornerRadius + connectorHalfWidth, anchorX)
+  );
   const top = barsRect.bottom - cardRect.top - 276;
   tooltip.style.setProperty('--tooltip-left', `${Math.round(left)}px`);
   tooltip.style.setProperty('--tooltip-top', `${Math.round(top)}px`);
-  tooltip.style.setProperty('--tooltip-tail-x', `${Math.round(tailX)}px`);
+  const leftShoulder = attachmentX - 29;
+  const rightShoulder = attachmentX + 29;
+  const path = [
+    `M ${leftShoulder} 0`,
+    `H ${rightShoulder}`,
+    `C ${attachmentX + 10} 3 ${attachmentX + 1} 12 ${attachmentX + 1} 28`,
+    `C ${attachmentX + 1} 58 ${anchorX + 1} 82 ${anchorX + 1} 120`,
+    `H ${anchorX - 1}`,
+    `C ${anchorX - 1} 82 ${attachmentX - 1} 58 ${attachmentX - 1} 28`,
+    `C ${attachmentX - 1} 12 ${attachmentX - 10} 3 ${leftShoulder} 0 Z`
+  ].join(' ');
+  connector.setAttribute('viewBox', `0 0 ${cardRect.width} 120`);
+  connector.querySelector('path').setAttribute('d', path);
+  connector.style.setProperty('--connector-top', `${Math.round(top + 156)}px`);
 }
 
 function showForecastTooltip(chart, clientX) {
@@ -546,7 +566,10 @@ function showForecastTooltip(chart, clientX) {
   }
   tooltip.setAttribute('aria-hidden', 'false');
   positionForecastTooltip(card, bar);
-  requestAnimationFrame(() => tooltip.classList.add('is-visible'));
+  requestAnimationFrame(() => {
+    tooltip.classList.add('is-visible');
+    card.querySelector('.forecast-tooltip-connector').classList.add('is-visible');
+  });
 }
 
 function hideForecastTooltip(card = null) {
@@ -561,6 +584,7 @@ function hideForecastTooltip(card = null) {
     const tooltip = dayCard.querySelector('.forecast-tooltip');
     tooltip?.classList.remove('is-visible');
     tooltip?.setAttribute('aria-hidden', 'true');
+    dayCard.querySelector('.forecast-tooltip-connector')?.classList.remove('is-visible');
   });
 }
 
