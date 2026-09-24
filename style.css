@@ -79,6 +79,14 @@ body {
 }
 html.is-scroll-locked,
 body.is-scroll-locked { overflow: hidden; overscroll-behavior: none; }
+html.is-scroll-locked {
+  background-color: #fff !important;
+  background-image: linear-gradient(#dcecfb, #dcecfb) !important;
+  background-position: center top !important;
+  background-size: 100% var(--top-canvas-height) !important;
+  background-repeat: no-repeat !important;
+  background-attachment: scroll !important;
+}
 body.is-scroll-locked { width: 100%; }
 button, input, textarea {
   font-feature-settings: "lnum" 1, "pnum" 1;
@@ -895,6 +903,8 @@ textarea,
 }
 .sheet:not(.expanded) .sheet-scroll { overflow-y: clip; }
 .sheet:not(.expanded) .sheet-scroll.can-scroll { overflow-y: auto; }
+.sheet.surface-dismiss,
+.sheet.surface-dismiss .sheet-scroll { touch-action: pan-x; }
 .grabber {
   position: absolute;
   z-index: 5;
@@ -1272,6 +1282,7 @@ textarea,
   border-radius: 56px 56px 0 0;
   background: #fff;
   overflow: hidden;
+  touch-action: pan-x;
   transition: transform .42s cubic-bezier(.2,.8,.2,1);
 }
 .feedback-sheet.open { transform: translate(-50%, 0); }

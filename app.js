@@ -475,9 +475,12 @@ function hideOverlay() {
 function updateSheetScrollMode() {
   if (!sheet.classList.contains('open') || sheet.classList.contains('expanded')) {
     sheetScroll.classList.remove('can-scroll');
+    sheet.classList.remove('surface-dismiss');
     return;
   }
-  sheetScroll.classList.toggle('can-scroll', sheetScroll.scrollHeight > sheetScroll.clientHeight + 2);
+  const canScroll = sheetScroll.scrollHeight - sheetScroll.clientHeight > 32;
+  sheetScroll.classList.toggle('can-scroll', canScroll);
+  sheet.classList.toggle('surface-dismiss', !canScroll);
 }
 
 function openSheet() {
@@ -741,16 +744,16 @@ function clearPanelDrag(panel) {
 }
 
 function attachDismissGesture(panel, closePanel) {
-  const handle = panel.querySelector('.grabber');
   const underlay = panelUnderlay(panel);
   let active = false;
   let pointerId = null;
-  let touchId = null;
+  let candidate = null;
   let startY = 0;
   let startOffset = 0;
   let distance = 0;
   let startedAt = 0;
   let settleTimer = 0;
+  let suppressClickUntil = 0;
 
   const start = clientY => {
     dismissCommentKeyboard();
@@ -801,60 +804,73 @@ function attachDismissGesture(panel, closePanel) {
     settleTimer = window.setTimeout(() => clearPanelDrag(panel), 210);
   };
 
-  handle.addEventListener('pointerdown', event => {
+  const surfaceGestureAllowed = target => {
+    if (target.closest('.feeling-slider, textarea')) return false;
+    if (panel === sheet) {
+      return sheet.classList.contains('surface-dismiss') && !sheet.classList.contains('expanded');
+    }
+    return true;
+  };
+
+  panel.addEventListener('pointerdown', event => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const directHandle = Boolean(event.target.closest('.grabber'));
+    if (!directHandle && !surfaceGestureAllowed(event.target)) return;
+
     pointerId = event.pointerId;
-    start(event.clientY);
-    try { handle.setPointerCapture(event.pointerId); } catch {}
-    event.preventDefault();
-  });
+    candidate = directHandle ? null : { x: event.clientX, y: event.clientY };
 
-  const movePointer = event => {
+    if (directHandle) {
+      start(event.clientY);
+      try { panel.setPointerCapture(event.pointerId); } catch {}
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  panel.addEventListener('pointermove', event => {
     if (event.pointerId !== pointerId) return;
+
+    if (!active && candidate) {
+      const deltaX = event.clientX - candidate.x;
+      const deltaY = event.clientY - candidate.y;
+      if (Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) return;
+      if (deltaY <= 0 || Math.abs(deltaX) >= Math.abs(deltaY)) {
+        pointerId = null;
+        candidate = null;
+        return;
+      }
+
+      start(candidate.y);
+      candidate = null;
+      try { panel.setPointerCapture(event.pointerId); } catch {}
+    }
+
+    if (!active) return;
     moveTo(event.clientY);
-    event.preventDefault();
-  };
-
-  const finishPointer = event => {
-    if (event.pointerId !== pointerId) return;
-    try {
-      if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
-    } catch {}
-    pointerId = null;
-    finish();
-  };
-
-  handle.addEventListener('touchstart', event => {
-    if (active || touchId !== null) return;
-    const touch = event.changedTouches[0];
-    if (!touch) return;
-    touchId = touch.identifier;
-    start(touch.clientY);
     event.preventDefault();
   }, { passive: false });
 
-  const moveTouch = event => {
-    if (touchId === null) return;
-    const touch = Array.from(event.touches).find(item => item.identifier === touchId);
-    if (!touch) return;
-    moveTo(touch.clientY);
+  const finishPointer = event => {
+    if (event.pointerId !== pointerId) return;
+    const wasActive = active;
+    try {
+      if (panel.hasPointerCapture(event.pointerId)) panel.releasePointerCapture(event.pointerId);
+    } catch {}
+    pointerId = null;
+    candidate = null;
+    if (!wasActive) return;
+    suppressClickUntil = performance.now() + 450;
+    finish();
     event.preventDefault();
   };
 
-  const finishTouch = event => {
-    if (touchId === null) return;
-    const touchEnded = Array.from(event.changedTouches).some(item => item.identifier === touchId);
-    if (!touchEnded) return;
-    touchId = null;
-    finish();
-  };
-
-  document.addEventListener('pointermove', movePointer, { passive: false });
-  document.addEventListener('pointerup', finishPointer);
-  document.addEventListener('pointercancel', finishPointer);
-  document.addEventListener('touchmove', moveTouch, { passive: false });
-  document.addEventListener('touchend', finishTouch);
-  document.addEventListener('touchcancel', finishTouch);
+  panel.addEventListener('pointerup', finishPointer, { passive: false });
+  panel.addEventListener('pointercancel', finishPointer, { passive: false });
+  panel.addEventListener('click', event => {
+    if (performance.now() >= suppressClickUntil) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
 }
 
 attachDismissGesture(sheet, closeSheet);
