@@ -318,18 +318,31 @@ textarea,
 .ten-day-icon { position: relative; display: block; width: 32px; height: 32px; flex: 0 0 32px; }
 .ten-day-icon.sun { padding: 3.333px; }
 .ten-day-icon.sun > img { display: block; width: 25.333px; height: 25.333px; }
-.ten-day-icon .cloud { position: absolute; top: 4.5px; left: 3.5px; width: 24.6px; height: 16.65px; }
-.ten-day-icon .part-day { position: absolute; top: 2.6px; right: 2.9px; width: 12.8px; height: 12.8px; }
-.ten-day-icon .drop { position: absolute; top: 23px; width: 4.1px; height: 5.85px; }
-.ten-day-icon .drop-1 { left: 10px; }
-.ten-day-icon .drop-2 { left: 18px; }
-.ten-day-icon .drop-3 { left: 24px; }
-.ten-day-icon .snow { position: absolute; top: 23px; width: 5px; height: 5px; }
-.ten-day-icon .snow-1 { left: 10px; }
-.ten-day-icon .snow-2 { left: 20px; }
-.ten-day-icon.snow-partly .cloud { top: 5.8px; left: 4.5px; width: 22.7px; height: 13.8px; }
-.ten-day-icon.wintry .drop-2 { left: 20px; }
-.ten-day-icon.wintry .snow-1 { left: 9px; }
+.figma-weather-icon { overflow: hidden; }
+.figma-weather-icon i,
+.figma-weather-icon b { position: absolute; display: block; }
+.figma-weather-icon img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; }
+.figma-precip { inset: 69.96% 10.07% 2.09%; overflow: hidden; }
+.rain-icon .figma-cloud,
+.wintry-icon .figma-cloud,
+.heavy-rain-icon .figma-cloud { inset: 14.06% 12.07% 34.03% 11.07%; }
+.rain-icon .particle { inset-block: 7.14% 21.43%; }
+.rain-icon .p1 { right: 56.25%; left: 26.25%; }
+.rain-icon .p2 { right: 31.25%; left: 51.25%; }
+.snow-partly-icon .figma-sun { inset: 8.07% 9.07% 52% 51%; }
+.snow-partly-icon .figma-cloud { inset: 18.06% 15.06% 34.03% 14.06%; }
+.snow-partly-icon .particle { inset-block: 7.14% 21.43%; }
+.snow-partly-icon .p1 { right: 52.5%; left: 20%; }
+.snow-partly-icon .p2 { right: 20%; left: 52.5%; }
+.wintry-icon .particle { inset-block: 7.14% 21.43%; }
+.wintry-icon .p1 { right: 61.25%; left: 11.25%; }
+.wintry-icon .p2 { right: 38.75%; left: 43.75%; }
+.wintry-icon .p3 { right: 16.25%; left: 66.25%; }
+.heavy-rain-icon .particle { inset-block: 7.14% 21.43%; }
+.heavy-rain-icon .p1 { right: 73.75%; left: 8.75%; }
+.heavy-rain-icon .p2 { right: 53.75%; left: 28.75%; }
+.heavy-rain-icon .p3 { right: 33.75%; left: 48.75%; }
+.heavy-rain-icon .p4 { right: 13.75%; left: 68.75%; }
 .weekend .forecast-date small { color: #ffa7bc; }
 .month-forecast {
   display: flex;
