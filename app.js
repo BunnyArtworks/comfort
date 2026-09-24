@@ -443,14 +443,16 @@ function renderForecastList() {
           <div class="forecast-times" aria-hidden="true">${labels}</div>
         </div>
         ${dayIndex === 0 ? forecastLegendMarkup() : ''}
-        <div class="forecast-tooltip" role="tooltip" aria-hidden="true">
-          <div class="forecast-tooltip-head">
-            <span class="forecast-tooltip-hour">11:00</span>
-            <span class="forecast-tooltip-score"><b>64</b><small>/100</small><i></i></span>
+        <div class="forecast-tooltip-layer" aria-hidden="true">
+          <div class="forecast-tooltip" role="tooltip" aria-hidden="true">
+            <div class="forecast-tooltip-head">
+              <span class="forecast-tooltip-hour">11:00</span>
+              <span class="forecast-tooltip-score"><b>64</b><small>/100</small><i></i></span>
+            </div>
+            <div class="forecast-tooltip-chips"></div>
           </div>
-          <div class="forecast-tooltip-chips"></div>
+          <svg class="forecast-tooltip-connector" viewBox="0 0 353 120" preserveAspectRatio="none" aria-hidden="true"><path></path></svg>
         </div>
-        <svg class="forecast-tooltip-connector" viewBox="0 0 353 120" preserveAspectRatio="none" aria-hidden="true"><path></path></svg>
       </article>`;
   }).join('');
 }
@@ -532,7 +534,7 @@ function positionForecastTooltip(card, bar) {
   ].join(' ');
   connector.setAttribute('viewBox', `0 0 ${cardRect.width} 120`);
   connector.querySelector('path').setAttribute('d', path);
-  connector.style.setProperty('--connector-top', `${Math.round(top + 156)}px`);
+  connector.style.setProperty('--connector-top', `${Math.round(top + 155)}px`);
 }
 
 function showForecastTooltip(chart, clientX) {
@@ -566,11 +568,10 @@ function showForecastTooltip(chart, clientX) {
     tooltip.querySelector('.forecast-tooltip-chips').innerHTML = forecastTooltipData(day, hour, value);
   }
   tooltip.setAttribute('aria-hidden', 'false');
+  const layer = card.querySelector('.forecast-tooltip-layer');
+  layer.setAttribute('aria-hidden', 'false');
   positionForecastTooltip(card, bar);
-  requestAnimationFrame(() => {
-    tooltip.classList.add('is-visible');
-    card.querySelector('.forecast-tooltip-connector').classList.add('is-visible');
-  });
+  requestAnimationFrame(() => layer.classList.add('is-visible'));
 }
 
 function hideForecastTooltip(card = null) {
@@ -583,9 +584,10 @@ function hideForecastTooltip(card = null) {
       bar.classList.remove('is-current');
     });
     const tooltip = dayCard.querySelector('.forecast-tooltip');
-    tooltip?.classList.remove('is-visible');
     tooltip?.setAttribute('aria-hidden', 'true');
-    dayCard.querySelector('.forecast-tooltip-connector')?.classList.remove('is-visible');
+    const layer = dayCard.querySelector('.forecast-tooltip-layer');
+    layer?.classList.remove('is-visible');
+    layer?.setAttribute('aria-hidden', 'true');
   });
 }
 

@@ -1378,13 +1378,27 @@ textarea,
   border-radius: 50%;
   background: var(--legend-color);
 }
+.forecast-tooltip-layer {
+  position: absolute;
+  z-index: 49;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .16s ease, visibility 0s linear .16s;
+}
+.forecast-tooltip-layer.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
 .forecast-tooltip {
   --tooltip-left: 8px;
   --tooltip-top: -56px;
   --tooltip-br-left: 32px;
   --tooltip-br-right: 32px;
   position: absolute;
-  z-index: 50;
+  z-index: 1;
   top: 0;
   left: 0;
   display: flex;
@@ -1397,19 +1411,11 @@ textarea,
   color: #fff;
   background: var(--tooltip-surface);
   box-shadow: 0 0 2px rgba(147,151,173,.1), 0 8px 28px rgba(147,151,173,.3);
-  opacity: 0;
-  visibility: hidden;
   pointer-events: none;
-  transform: translate3d(var(--tooltip-left), calc(var(--tooltip-top) + 8px), 0) scale(.985);
+  transform: translate3d(var(--tooltip-left), var(--tooltip-top), 0);
   transform-origin: 50% 100%;
-  transition: opacity .16s ease, visibility 0s linear .16s, transform .14s cubic-bezier(.2,.75,.2,1), border-radius .14s cubic-bezier(.2,.75,.2,1);
+  transition: transform .14s cubic-bezier(.2,.75,.2,1), border-radius .14s cubic-bezier(.2,.75,.2,1);
   will-change: transform;
-}
-.forecast-tooltip.is-visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translate3d(var(--tooltip-left), var(--tooltip-top), 0) scale(1);
-  transition-delay: 0s;
 }
 .forecast-tooltip-head {
   display: flex;
@@ -1472,32 +1478,25 @@ textarea,
   -webkit-mask-size: 20px 20px;
   mask-size: 20px 20px;
 }
-.forecast-chip.green { --chip-color: #00d98b; --chip-background: rgba(0,231,148,.24); }
+.forecast-chip.green { --chip-color: #17c687; --chip-background: rgba(0,231,148,.3); }
 .forecast-chip.yellow { --chip-color: #ebb93b; --chip-background: rgba(255,212,42,.3); }
 .forecast-chip.orange { --chip-color: #f3843f; --chip-background: rgba(255,149,42,.3); }
 .forecast-chip.red { --chip-color: #ff674e; --chip-background: rgba(255,116,116,.3); }
 .forecast-tooltip-connector {
   position: absolute;
-  z-index: 49;
+  z-index: 0;
   top: var(--connector-top, 0);
   left: 0;
   display: block;
   width: 100%;
   height: 120px;
   overflow: visible;
-  opacity: 0;
-  visibility: hidden;
   pointer-events: none;
-  transition: opacity .14s ease, visibility 0s linear .14s;
+  transition: none;
 }
 .forecast-tooltip-connector path {
   fill: var(--tooltip-surface);
   shape-rendering: geometricPrecision;
-}
-.forecast-tooltip-connector.is-visible {
-  opacity: 1;
-  visibility: visible;
-  transition-delay: 0s;
 }
 @keyframes forecast-list-in {
   from { opacity: 0; transform: translateY(10px); }
