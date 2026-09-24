@@ -822,7 +822,8 @@ textarea,
 }
 .overlay.is-visible { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
 .overlay.is-dismissing { visibility: visible; pointer-events: auto; }
-.sheet-underlay {
+.sheet-underlay,
+.feedback-underlay {
   --underlay-closed-offset: calc(100dvh + 64px);
   position: absolute;
   z-index: 21;
@@ -844,12 +845,14 @@ textarea,
     visibility 0s linear .42s;
   will-change: top, height, transform;
 }
-.sheet-underlay.open {
+.sheet-underlay.open,
+.feedback-underlay.open {
   transform: translate(-50%, 0);
   opacity: 1;
   visibility: visible;
   transition-delay: 0s;
 }
+.feedback-underlay { z-index: 23; }
 .sheet {
   --sheet-visible-height: min(756px, calc(100dvh - 32px));
   position: fixed;
@@ -1352,7 +1355,8 @@ textarea,
 @media (max-width: 392px) {
   .sheet { width: 100%; }
   .feedback-sheet { width: 100%; }
-  .sheet-underlay { width: 100%; }
+  .sheet-underlay,
+  .feedback-underlay { width: 100%; }
 }
 
 @media (max-width: 375px) and (min-height: 760px) {
