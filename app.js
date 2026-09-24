@@ -512,6 +512,34 @@ function forecastBarAt(chart, clientX) {
   return best;
 }
 
+function forecastTooltipSquircle(width, height, leftRadius, rightRadius) {
+  const points = [];
+  const topRadius = 32;
+  const steps = 10;
+  const add = (x, y) => points.push(`${x.toFixed(3)}px ${y.toFixed(3)}px`);
+  const addCorner = (cx, cy, radius, startAngle, endAngle) => {
+    for (let step = 1; step <= steps; step += 1) {
+      const angle = startAngle + (endAngle - startAngle) * step / steps;
+      const cosine = Math.cos(angle);
+      const sine = Math.sin(angle);
+      const x = cx + Math.sign(cosine) * Math.sqrt(Math.abs(cosine)) * radius;
+      const y = cy + Math.sign(sine) * Math.sqrt(Math.abs(sine)) * radius;
+      add(x, y);
+    }
+  };
+
+  add(topRadius, 0);
+  add(width - topRadius, 0);
+  addCorner(width - topRadius, topRadius, topRadius, -Math.PI / 2, 0);
+  add(width, height - rightRadius);
+  addCorner(width - rightRadius, height - rightRadius, rightRadius, 0, Math.PI / 2);
+  add(leftRadius, height);
+  addCorner(leftRadius, height - leftRadius, leftRadius, Math.PI / 2, Math.PI);
+  add(0, topRadius);
+  addCorner(topRadius, topRadius, topRadius, Math.PI, Math.PI * 1.5);
+  return `polygon(${points.join(',')})`;
+}
+
 function positionForecastTooltip(card, bar) {
   const tooltip = card.querySelector('.forecast-tooltip');
   const connector = card.querySelector('.forecast-tooltip-connector');
@@ -534,6 +562,9 @@ function positionForecastTooltip(card, bar) {
   tooltip.style.setProperty('--tooltip-top', `${Math.round(top)}px`);
   tooltip.style.setProperty('--tooltip-br-left', `${Math.round(leftRadius)}px`);
   tooltip.style.setProperty('--tooltip-br-right', `${Math.round(rightRadius)}px`);
+  const squircle = forecastTooltipSquircle(tooltipWidth, tooltip.offsetHeight, leftRadius, rightRadius);
+  tooltip.style.clipPath = squircle;
+  tooltip.style.webkitClipPath = squircle;
   const leftShoulder = Math.max(left + leftRadius, anchorX - connectorHalfWidth);
   const rightShoulder = Math.min(left + tooltipWidth - rightRadius, anchorX + connectorHalfWidth);
   const path = [
