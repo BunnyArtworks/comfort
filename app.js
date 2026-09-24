@@ -426,7 +426,7 @@ function renderForecastList() {
       <i class="forecast-bar" data-hour="${hour}" data-value="${value}"
         style="height:${Math.max(28, Math.min(96, Math.round(value)))}px;--bar-color:${colorHex[color(value)]}"></i>
     `).join('');
-    const labels = [0, 6, 12, 18].map(hour =>
+    const labels = [0, 6, 12, 18, 23].map(hour =>
       `<span data-hour="${hour}">${hour}</span>`
     ).join('');
 
