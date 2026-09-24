@@ -9,6 +9,10 @@ const scoreGauge = document.querySelector('#score-gauge');
 const scoreProgress = document.querySelector('.score-progress');
 const scoreValue = document.querySelector('#score-value');
 const plotScroll = document.querySelector('#plot-scroll');
+const chartCard = document.querySelector('.chart-card');
+const chartTooltip = document.querySelector('#chart-tooltip');
+const bars = document.querySelector('#bars');
+const times = document.querySelector('#times');
 const feedbackSheet = document.querySelector('.feedback-sheet');
 const feelingRange = document.querySelector('#feeling-range');
 const feelingSlider = document.querySelector('#feeling-slider');
@@ -26,7 +30,9 @@ const CURRENT_HOUR = 10;
 const HOUR_STEP = 43.333;
 let condition = 'good';
 let selectedDay = 0;
+let selectedHour = null;
 let lockedScrollY = 0;
+let tooltipPositionFrame = 0;
 const panelOpenFrames = new WeakMap();
 
 function lockPageScroll() {
@@ -151,6 +157,108 @@ function valuesForDay(day) {
   return fullDays[day - 1];
 }
 
+function tooltipDetails(day, hour, value) {
+  if (day === 0 && condition === 'good' && hour === 14) {
+    return [
+      ['14°', 'tooltip-status-orange.svg'],
+      ['19 м/с', 'tooltip-status-orange.svg'],
+      ['сухо', 'status-green.svg'],
+      ['0, низкий', 'status-green.svg'],
+      ['ветер', 'status-yellow.svg']
+    ];
+  }
+
+  if (day === 0 && hour === CURRENT_HOUR) {
+    return conditions[condition].details.map(([detailValue, icon]) => [
+      detailValue === 'отсутствуют' ? 'сухо' : detailValue,
+      icon === 'status-orange.svg' ? 'tooltip-status-orange.svg' : icon
+    ]);
+  }
+
+  const daylight = hour >= 8 && hour <= 18;
+  const feels = Math.round(7 + value * .12 + (daylight ? 3 : 0) + Math.sin((hour - 6) / 24 * Math.PI * 2) * 4);
+  const wind = Math.min(19, Math.max(3, Math.round(3 + (100 - value) * .27)));
+  const rainNow = day === 0
+    ? condition === 'bad' ? hour < 18 : hour >= 11 && hour <= 16 && hour !== 14
+    : value < 38;
+  const thunder = day === 0 && condition === 'good' && hour >= 11 && hour <= 13;
+  const uvValue = daylight ? Math.max(0, Math.round(5 - Math.abs(13 - hour) * .8)) : 0;
+  const danger = thunder ? 'гроза' : wind >= 12 ? 'ветер' : 'нет';
+  const feelIcon = value >= 80 ? 'status-green.svg' : value >= 50 ? 'status-yellow.svg' : 'tooltip-status-orange.svg';
+  const windIcon = wind >= 12 ? 'tooltip-status-orange.svg' : wind >= 7 ? 'status-yellow.svg' : 'status-green.svg';
+  const uvIcon = uvValue <= 2 ? 'status-green.svg' : uvValue <= 5 ? 'status-yellow.svg' : 'tooltip-status-orange.svg';
+
+  return [
+    [`${feels}°`, feelIcon],
+    [`${wind} м/с`, windIcon],
+    [rainNow ? thunder ? 'гроза' : 'дождь' : 'сухо', rainNow ? 'tooltip-status-orange.svg' : 'status-green.svg'],
+    [`${uvValue}, ${uvValue <= 2 ? 'низкий' : uvValue <= 5 ? 'средний' : 'высокий'}`, uvIcon],
+    [danger, danger === 'нет' ? 'status-green.svg' : 'status-yellow.svg']
+  ];
+}
+
+function hideChartTooltip(immediate = false) {
+  cancelAnimationFrame(tooltipPositionFrame);
+  selectedHour = null;
+  chartCard.classList.remove('has-selection');
+  chartTooltip.classList.remove('is-visible');
+  chartTooltip.setAttribute('aria-hidden', 'true');
+  bars.querySelectorAll('.bar').forEach(bar => {
+    bar.classList.remove('selected');
+    bar.removeAttribute('aria-describedby');
+  });
+  times.querySelectorAll('span').forEach(time => time.classList.remove('selected'));
+  if (immediate) chartTooltip.style.setProperty('transition', 'none');
+  if (immediate) requestAnimationFrame(() => chartTooltip.style.removeProperty('transition'));
+}
+
+function positionChartTooltip() {
+  cancelAnimationFrame(tooltipPositionFrame);
+  tooltipPositionFrame = requestAnimationFrame(() => {
+    if (selectedHour === null) return;
+    const selectedBar = bars.querySelector(`.bar[data-hour="${selectedHour}"]`);
+    if (!selectedBar) return;
+    const cardRect = chartCard.getBoundingClientRect();
+    const barRect = selectedBar.getBoundingClientRect();
+    const tooltipWidth = chartTooltip.offsetWidth;
+    const tooltipHeight = chartTooltip.offsetHeight;
+    const anchorX = barRect.left + barRect.width / 2 - cardRect.left;
+    const minLeft = 8;
+    const maxLeft = Math.max(minLeft, cardRect.width - tooltipWidth - 8);
+    const left = Math.min(maxLeft, Math.max(minLeft, anchorX - tooltipWidth / 2 - 8));
+    const tailX = Math.min(tooltipWidth - 24, Math.max(24, anchorX - left));
+    const top = barRect.top - cardRect.top - tooltipHeight - 16;
+    chartTooltip.style.setProperty('--tooltip-x', `${left}px`);
+    chartTooltip.style.setProperty('--tooltip-y', `${top}px`);
+    chartTooltip.style.setProperty('--tail-x', `${tailX}px`);
+  });
+}
+
+function showChartTooltip(hour) {
+  if (selectedHour === hour && chartTooltip.classList.contains('is-visible')) {
+    hideChartTooltip();
+    return;
+  }
+
+  selectedHour = hour;
+  const value = valuesForDay(selectedDay)[hour];
+  const detailIds = ['#tooltip-feels', '#tooltip-wind', '#tooltip-rain', '#tooltip-uv', '#tooltip-danger'];
+  tooltipDetails(selectedDay, hour, value).forEach(([detailValue, icon], index) => {
+    chartTooltip.querySelector(detailIds[index]).innerHTML = `${detailValue} <img src="assets/${icon}" alt="">`;
+  });
+  chartCard.classList.add('has-selection');
+  bars.querySelectorAll('.bar').forEach(bar => {
+    const selected = Number(bar.dataset.hour) === hour;
+    bar.classList.toggle('selected', selected);
+    if (selected) bar.setAttribute('aria-describedby', 'chart-tooltip');
+    else bar.removeAttribute('aria-describedby');
+  });
+  times.querySelectorAll('span').forEach(time => time.classList.toggle('selected', Number(time.dataset.hour) === hour));
+  chartTooltip.setAttribute('aria-hidden', 'false');
+  positionChartTooltip();
+  requestAnimationFrame(() => chartTooltip.classList.add('is-visible'));
+}
+
 function stripGradient(values) {
   const width = 100 / values.length;
   const stops = values.map((value, index) => {
@@ -216,19 +324,20 @@ function renderMainHourly() {
 }
 
 function renderChart() {
+  hideChartTooltip(true);
   const values = valuesForDay(selectedDay);
   const hours = Array.from({ length: 24 }, (_, index) => index);
 
   document.querySelector('#chart-copy').textContent = chartCopy[selectedDay]();
-  document.querySelector('#bars').innerHTML = values.map((value, hour) =>
-    `<div class="bar ${color(value)}${selectedDay === 0 && hour < CURRENT_HOUR ? ' past' : ''}" style="height:${Math.max(28, Math.round(value))}px">${value}</div>`
+  bars.innerHTML = values.map((value, hour) =>
+    `<button type="button" class="bar ${color(value)}${selectedDay === 0 && hour < CURRENT_HOUR ? ' past' : ''}" data-hour="${hour}" aria-label="${hour}:00, индекс комфортности ${value} из 100" style="height:${Math.max(28, Math.round(value))}px">${value}</button>`
   ).join('');
 
-  document.querySelector('#times').innerHTML = hours.map(hour => {
+  times.innerHTML = hours.map(hour => {
     const current = selectedDay === 0 && hour === CURRENT_HOUR;
     const label = current || (selectedDay !== 0 && hour === 0) ? `${hour}:00` : String(hour);
     const past = selectedDay === 0 && hour < CURRENT_HOUR;
-    return `<span class="${current ? 'current' : ''}${past ? ' past' : ''}">${label}</span>`;
+    return `<span data-hour="${hour}" class="${current ? 'current' : ''}${past ? ' past' : ''}">${label}</span>`;
   }).join('');
 
   requestAnimationFrame(() => {
@@ -373,6 +482,7 @@ function closeFeedback() {
 }
 
 function closeSheet() {
+  hideChartTooltip(true);
   dismissCommentKeyboard();
   resetFeelingDrag();
   cancelPanelOpen(sheet);
@@ -391,6 +501,16 @@ function closeSheet() {
 document.querySelectorAll('.mascot-toggle').forEach(button => button.addEventListener('click', toggleCondition));
 document.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', openSheet));
 document.querySelectorAll('.days button').forEach(button => button.addEventListener('click', () => selectDay(Number(button.dataset.day))));
+bars.addEventListener('click', event => {
+  const bar = event.target.closest('.bar');
+  if (!bar) return;
+  showChartTooltip(Number(bar.dataset.hour));
+});
+plotScroll.addEventListener('scroll', positionChartTooltip, { passive: true });
+document.addEventListener('pointerdown', event => {
+  if (selectedHour === null || event.target.closest('.bar')) return;
+  hideChartTooltip();
+});
 document.querySelectorAll('[data-report]').forEach(button => button.addEventListener('click', () => {
   const control = button.closest('.report-control');
   const choice = button.dataset.report;
@@ -503,6 +623,7 @@ document.addEventListener('visibilitychange', resetFeelingDrag);
 window.addEventListener('resize', () => {
   updateFeeling();
   updateSheetScrollMode();
+  positionChartTooltip();
 });
 weatherComment.addEventListener('focus', event => {
   if (performance.now() < suppressCommentFocusUntil) event.currentTarget.blur();
@@ -534,6 +655,10 @@ overlay.addEventListener('click', event => {
 });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
+  if (selectedHour !== null) {
+    hideChartTooltip();
+    return;
+  }
   if (feedbackSheet.classList.contains('open')) closeFeedback();
   else closeSheet();
 });
