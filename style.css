@@ -50,7 +50,7 @@ html, body { margin: 0; min-height: 100%; overflow-x: clip; touch-action: pan-x 
 html {
   --top-canvas-height: max(64px, calc(env(safe-area-inset-top, 0px) + 12px));
   min-height: 100dvh;
-  background-color: #3e8cdd;
+  background-color: #000;
   background-image:
     linear-gradient(#dcecfb, #dcecfb),
     url("assets/main-bg-source.png");
@@ -61,7 +61,7 @@ html {
   overscroll-behavior-y: none;
 }
 html[data-condition="bad"] {
-  background-color: #355992;
+  background-color: #000;
   background-image:
     linear-gradient(#dcecfb, #dcecfb),
     url("assets/main-bg-rain.png");
