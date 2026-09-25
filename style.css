@@ -1465,6 +1465,12 @@ textarea,
   -webkit-mask-size: 20px 20px;
   mask-size: 20px 20px;
 }
+.forecast-chip.safe .forecast-chip-icon::before {
+  width: 20px;
+  height: 20px;
+  -webkit-mask-size: 20px 20px;
+  mask-size: 20px 20px;
+}
 .forecast-chip.green { --chip-color: #17c687; --chip-background: rgba(0,231,148,.3); padding-right: 10px; }
 .forecast-chip.yellow { --chip-color: #ebb93b; --chip-background: rgba(255,212,42,.3); }
 .forecast-chip.orange { --chip-color: #f3843f; --chip-background: rgba(255,149,42,.3); }

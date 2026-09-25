@@ -492,7 +492,7 @@ function forecastTooltipData(day, hour, value) {
     forecastChip('new-tooltip-wind.svg', wind, windTone),
     forecastChip(rain === 'сухо' ? 'new-tooltip-dry.svg' : 'new-tooltip-rain.svg', rain, rainTone),
     forecastChip('new-tooltip-uv.svg', `УФ ${uvValue}`, uvValue <= 2 ? 'green' : uvValue <= 5 ? 'yellow' : 'red'),
-    forecastChip(danger === 'нет' ? 'new-tooltip-like.svg' : 'new-tooltip-warning.svg', dangerText, dangerTone, danger === 'нет' ? '' : 'warning')
+    forecastChip(danger === 'нет' ? 'new-tooltip-like.svg' : 'new-tooltip-warning.svg', dangerText, dangerTone, danger === 'нет' ? 'safe' : 'warning')
   ];
   return `<span class="forecast-tooltip-chip-row">${[chips[0], chips[1], chips[3]].join('')}</span><span class="forecast-tooltip-chip-row">${[chips[2], chips[4]].join('')}</span>`;
 }
