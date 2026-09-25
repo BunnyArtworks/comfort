@@ -31,10 +31,6 @@ const hybridChart = document.querySelector('#hybrid-chart');
 const hybridBars = document.querySelector('#hybrid-bars');
 const hybridTimes = document.querySelector('#hybrid-times');
 const hybridCopy = document.querySelector('#hybrid-copy');
-const comfortFlower = document.querySelector('#comfort-flower');
-const flowerScoreToggle = document.querySelector('#flower-score-toggle');
-const flowerScoreValue = document.querySelector('#flower-score-value');
-const flowerTooltip = document.querySelector('#flower-tooltip');
 const ratingNote = document.querySelector('.rating-note');
 const feedbackForm = document.querySelector('.feedback-form');
 const feedbackDone = document.querySelector('.feedback-done');
@@ -49,7 +45,6 @@ let lockedScrollY = 0;
 let tooltipPositionFrame = 0;
 let forecastPointer = null;
 let forecastHideTimer = 0;
-let selectedFlowerPart = null;
 const panelOpenFrames = new WeakMap();
 const underlayHideTimers = new WeakMap();
 
@@ -202,83 +197,6 @@ const conditions = {
   }
 };
 
-const flowerParameters = {
-  good: {
-    temperature: {
-      label: 'Температура',
-      tone: 'green',
-      blob: 'flower-good-temperature.svg',
-      icon: 'flower-icon-temperature-good.svg',
-      copy: 'Ощущается как 22°. Температура почти не снижает итоговую оценку.'
-    },
-    wind: {
-      label: 'Ветер',
-      tone: 'green',
-      blob: 'flower-good-wind.svg',
-      icon: 'flower-icon-wind-good.svg',
-      copy: 'Ветер 3 м/с — лёгкий и почти не влияет на комфорт.'
-    },
-    rain: {
-      label: 'Осадки',
-      tone: 'green',
-      blob: 'flower-good-rain.svg',
-      icon: 'flower-icon-rain-good.svg',
-      copy: 'Сейчас сухо. Дождь начнётся около 11:00.'
-    },
-    uv: {
-      label: 'УФ-индекс',
-      tone: 'green',
-      blob: 'flower-good-uv.svg',
-      icon: 'flower-icon-uv-good.svg',
-      copy: 'УФ-индекс 2 — низкий, дополнительная защита не нужна.'
-    },
-    danger: {
-      label: 'Погодные опасности',
-      tone: 'green',
-      blob: 'flower-good-danger.svg',
-      icon: 'flower-icon-danger-good.svg',
-      copy: 'Опасных явлений сейчас нет.'
-    }
-  },
-  bad: {
-    temperature: {
-      label: 'Температура',
-      tone: 'yellow',
-      blob: 'flower-bad-temperature.svg',
-      icon: 'flower-icon-temperature-bad.svg',
-      copy: 'Ощущается как 14°. Прохлада немного снижает оценку.'
-    },
-    wind: {
-      label: 'Ветер',
-      tone: 'red',
-      blob: 'flower-bad-wind.svg',
-      icon: 'flower-icon-wind-bad.svg',
-      copy: 'Ветер 19 м/с — главный фактор дискомфорта.'
-    },
-    rain: {
-      label: 'Осадки',
-      tone: 'orange',
-      blob: 'flower-bad-rain.svg',
-      icon: 'flower-icon-rain-bad.svg',
-      copy: 'Слабый дождь продлится примерно до 18:00.'
-    },
-    uv: {
-      label: 'УФ-индекс',
-      tone: 'green',
-      blob: 'flower-bad-uv.svg',
-      icon: 'flower-icon-uv-bad.svg',
-      copy: 'УФ-индекс 0 — риска обгореть нет.'
-    },
-    danger: {
-      label: 'Погодные опасности',
-      tone: 'orange',
-      blob: 'flower-bad-danger.svg',
-      icon: 'flower-icon-danger-bad.svg',
-      copy: 'Сильный ветер — соблюдайте осторожность на улице.'
-    }
-  }
-};
-
 const todayGood = [86, 84, 82, 83, 85, 87, 89, 91, 93, 95, 96, 76, 70, 67, 52, 24, 16, 48, 57, 62, 68, 74, 91, 90];
 const todayBad = [63, 60, 58, 55, 52, 48, 46, 44, 45, 47, 48, 42, 34, 28, 23, 36, 58, 71, 82, 86, 84, 82, 72, 68];
 const fullDays = [
@@ -355,76 +273,6 @@ function color(value) {
   if (value >= 50) return 'yellow';
   if (value >= 30) return 'orange';
   return 'red';
-}
-
-function updateFlowerScale() {
-  if (!comfortFlower.offsetWidth) return;
-  comfortFlower.style.setProperty('--flower-scale', Math.min(1, comfortFlower.clientWidth / 345).toFixed(4));
-}
-
-function hideFlowerTooltip() {
-  selectedFlowerPart = null;
-  comfortFlower.classList.remove('has-selection');
-  comfortFlower.querySelectorAll('.flower-petal').forEach(button => {
-    button.classList.remove('selected');
-    button.setAttribute('aria-pressed', 'false');
-    button.removeAttribute('aria-describedby');
-  });
-  flowerTooltip.classList.remove('is-visible');
-  flowerTooltip.setAttribute('aria-hidden', 'true');
-}
-
-function showFlowerTooltip(part) {
-  if (selectedFlowerPart === part && flowerTooltip.classList.contains('is-visible')) {
-    hideFlowerTooltip();
-    return;
-  }
-
-  const parameter = flowerParameters[condition][part];
-  if (!parameter) return;
-  selectedFlowerPart = part;
-  comfortFlower.classList.add('has-selection');
-  comfortFlower.querySelectorAll('.flower-petal').forEach(button => {
-    const selected = button.dataset.flowerPart === part;
-    button.classList.toggle('selected', selected);
-    button.setAttribute('aria-pressed', String(selected));
-    if (selected) button.setAttribute('aria-describedby', 'flower-tooltip');
-    else button.removeAttribute('aria-describedby');
-  });
-  flowerTooltip.dataset.anchor = part;
-  flowerTooltip.querySelector('p').textContent = parameter.copy;
-  flowerTooltip.setAttribute('aria-hidden', 'false');
-  requestAnimationFrame(() => flowerTooltip.classList.add('is-visible'));
-}
-
-function renderFlower() {
-  const data = conditions[condition];
-  const parameters = flowerParameters[condition];
-  hideFlowerTooltip();
-  flowerScoreValue.textContent = data.score;
-  flowerScoreToggle.style.setProperty('--overall-color', data.scoreColor);
-  flowerScoreToggle.setAttribute('aria-label', `${data.score} из 100. Итоговый цвет совпадает с цветом оценки на графике. Переключить формат прогноза`);
-  comfortFlower.querySelectorAll('.flower-petal').forEach(button => {
-    const parameter = parameters[button.dataset.flowerPart];
-    button.querySelector('.flower-petal-image').src = `assets/${parameter.blob}`;
-    button.querySelector('.flower-petal-icon').src = `assets/${parameter.icon}`;
-    button.dataset.tone = parameter.tone;
-    button.style.setProperty('--petal-tint', condition === 'bad' ? {
-      temperature: 'hue-rotate(-95deg) saturate(1.05)',
-      wind: 'hue-rotate(-80deg) saturate(1.08)',
-      rain: 'hue-rotate(-122deg) saturate(1.05)',
-      danger: 'hue-rotate(-25deg) saturate(1.02)',
-      uv: 'hue-rotate(180deg) saturate(.92)'
-    }[button.dataset.flowerPart] : 'none');
-    button.setAttribute('aria-label', `${parameter.label}. ${parameter.copy}`);
-  });
-  updateFlowerScale();
-  if (sheet.classList.contains('open')) {
-    comfortFlower.classList.remove('is-updating');
-    void comfortFlower.offsetWidth;
-    comfortFlower.classList.add('is-updating');
-    window.setTimeout(() => comfortFlower.classList.remove('is-updating'), 480);
-  }
 }
 
 function valuesForDay(day) {
@@ -825,7 +673,6 @@ function hideForecastTooltip(card = null) {
 function setForecastMode(mode) {
   const nextMode = ['hybrid', 'classic', 'list'].includes(mode) ? mode : 'hybrid';
   hideForecastTooltip();
-  hideFlowerTooltip();
   forecastPointer = null;
   setBreakdownExpanded(false);
   forecastMode = nextMode;
@@ -838,10 +685,7 @@ function setForecastMode(mode) {
   scoreGauge.dataset.forecastMode = nextMode;
   scoreGauge.setAttribute('aria-label', `${conditions[condition].score} из 100. Формат прогноза: ${nextMode === 'hybrid' ? 'один день' : nextMode === 'classic' ? 'исходный график' : 'пять дней'}. Переключить формат`);
   sheetScroll.scrollTo({ top: 0, behavior: 'auto' });
-  if (nextMode === 'hybrid') {
-    renderFlower();
-    renderHybridChart();
-  }
+  if (nextMode === 'hybrid') renderHybridChart();
   if (nextMode === 'classic') renderChart();
   if (nextMode !== 'list') updateCompactSheetHeight();
   requestAnimationFrame(() => {
@@ -943,7 +787,6 @@ function renderCondition() {
   renderMainHourly();
   renderDayStrips();
   renderChart();
-  renderFlower();
   renderHybridChart();
   renderForecastList();
 }
@@ -1106,22 +949,16 @@ function closeSheet() {
 document.querySelectorAll('.mascot-toggle').forEach(button => button.addEventListener('click', toggleCondition));
 document.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', openSheet));
 document.querySelectorAll('.days button, .hybrid-days button').forEach(button => button.addEventListener('click', () => selectDay(Number(button.dataset.day))));
-comfortFlower.querySelectorAll('.flower-petal').forEach(button => button.addEventListener('click', () => {
-  showFlowerTooltip(button.dataset.flowerPart);
-}));
 bars.addEventListener('click', event => {
   const bar = event.target.closest('.bar');
   if (!bar) return;
   showChartTooltip(Number(bar.dataset.hour));
 });
-function cycleForecastMode() {
+scoreGauge.addEventListener('click', () => {
   const modes = ['hybrid', 'classic', 'list'];
   const currentIndex = modes.indexOf(forecastMode);
   setForecastMode(modes[(currentIndex + 1) % modes.length]);
-}
-
-scoreGauge.addEventListener('click', cycleForecastMode);
-flowerScoreToggle.addEventListener('click', cycleForecastMode);
+});
 
 const finishForecastPointer = event => {
   if (!forecastPointer || forecastPointer.id !== event.pointerId) return;
@@ -1197,12 +1034,6 @@ document.addEventListener('pointerdown', event => {
   if (selectedHour === null || event.target.closest('.bar')) return;
   hideChartTooltip();
 });
-document.addEventListener('pointerdown', event => {
-  if (!selectedFlowerPart || event.target.closest('.flower-petal, .flower-tooltip')) return;
-  hideFlowerTooltip();
-});
-window.addEventListener('resize', updateFlowerScale, { passive: true });
-if ('ResizeObserver' in window) new ResizeObserver(updateFlowerScale).observe(comfortFlower);
 document.querySelectorAll('[data-report]').forEach(button => button.addEventListener('click', () => {
   const control = button.closest('.report-control');
   const choice = button.dataset.report;
