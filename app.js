@@ -40,7 +40,7 @@ const CURRENT_HOUR = 10;
 let condition = 'good';
 let selectedDay = 0;
 let selectedHour = null;
-let forecastMode = 'hybrid';
+let forecastMode = 'list';
 let lockedScrollY = 0;
 let tooltipPositionFrame = 0;
 let forecastPointer = null;
@@ -461,7 +461,7 @@ function renderForecastList() {
         </div>
       </article>`;
   }).join('');
-  requestAnimationFrame(positionForecastTimeLabels);
+  scheduleForecastTimeLabels();
 }
 
 function renderHybridChart() {
@@ -478,14 +478,23 @@ function renderHybridChart() {
   hybridTimes.innerHTML = [0, 6, 12, 18, 23].map(hour =>
     `<span data-hour="${hour}">${hour}</span>`
   ).join('');
-  requestAnimationFrame(positionHybridTimeLabels);
+  scheduleForecastTimeLabels();
+}
+
+function scheduleForecastTimeLabels() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      positionHybridTimeLabels();
+      positionForecastTimeLabels();
+    });
+  });
 }
 
 function positionHybridTimeLabels() {
   const timelineRect = hybridTimes.getBoundingClientRect();
-  const dayBars = hybridBars.querySelectorAll('.forecast-bar');
+  if (!timelineRect.width) return;
   hybridTimes.querySelectorAll('span').forEach(label => {
-    const bar = dayBars[Number(label.dataset.hour)];
+    const bar = hybridBars.querySelector(`.forecast-bar[data-hour="${label.dataset.hour}"]`);
     if (!bar) return;
     label.style.left = `${bar.getBoundingClientRect().left - timelineRect.left}px`;
   });
@@ -495,9 +504,10 @@ function positionForecastTimeLabels() {
   forecastList.querySelectorAll('.forecast-day').forEach(card => {
     const timeline = card.querySelector('.forecast-times');
     const timelineRect = timeline.getBoundingClientRect();
-    const bars = card.querySelectorAll('.forecast-bar');
+    if (!timelineRect.width) return;
     timeline.querySelectorAll('span').forEach(label => {
-      const bar = bars[Number(label.dataset.hour)];
+      const bar = card.querySelector(`.forecast-bar[data-hour="${label.dataset.hour}"]`);
+      if (!bar) return;
       label.style.left = `${bar.getBoundingClientRect().left - timelineRect.left}px`;
     });
   });
@@ -671,7 +681,7 @@ function hideForecastTooltip(card = null) {
 }
 
 function setForecastMode(mode) {
-  const nextMode = ['hybrid', 'classic', 'list'].includes(mode) ? mode : 'hybrid';
+  const nextMode = ['list', 'hybrid', 'classic'].includes(mode) ? mode : 'list';
   hideForecastTooltip();
   forecastPointer = null;
   setBreakdownExpanded(false);
@@ -687,6 +697,7 @@ function setForecastMode(mode) {
   sheetScroll.scrollTo({ top: 0, behavior: 'auto' });
   if (nextMode === 'hybrid') renderHybridChart();
   if (nextMode === 'classic') renderChart();
+  scheduleForecastTimeLabels();
   if (nextMode !== 'list') updateCompactSheetHeight();
   requestAnimationFrame(() => {
     updateSheetScrollMode();
@@ -871,7 +882,7 @@ function openSheet() {
   document.querySelectorAll('.days button, .hybrid-days button').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.day) === 0);
   });
-  setForecastMode('hybrid');
+  setForecastMode('list');
   renderCondition();
   setBreakdownExpanded(false);
   updateCompactSheetHeight();
@@ -955,7 +966,7 @@ bars.addEventListener('click', event => {
   showChartTooltip(Number(bar.dataset.hour));
 });
 scoreGauge.addEventListener('click', () => {
-  const modes = ['hybrid', 'classic', 'list'];
+  const modes = ['list', 'hybrid', 'classic'];
   const currentIndex = modes.indexOf(forecastMode);
   setForecastMode(modes[(currentIndex + 1) % modes.length]);
 });
@@ -1156,8 +1167,7 @@ window.addEventListener('resize', () => {
   updateFeeling();
   updateCompactSheetHeight();
   updateSheetScrollMode();
-  requestAnimationFrame(positionForecastTimeLabels);
-  requestAnimationFrame(positionHybridTimeLabels);
+  scheduleForecastTimeLabels();
   syncOpenUnderlays();
   positionChartTooltip();
 });
@@ -1172,7 +1182,7 @@ if ('ResizeObserver' in window) {
 window.visualViewport?.addEventListener('resize', syncOpenUnderlays);
 window.visualViewport?.addEventListener('scroll', syncOpenUnderlays);
 document.fonts?.ready.then(() => {
-  positionHybridTimeLabels();
+  scheduleForecastTimeLabels();
   updateCompactSheetHeight();
   updateSheetScrollMode();
 });
