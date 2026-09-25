@@ -1105,6 +1105,85 @@ textarea,
 .sheet.expanded .breakdown-open-label { opacity: 0; transform: translateY(-7px); }
 .sheet.expanded .breakdown-close-label { opacity: 1; transform: translateY(0); }
 
+.hybrid-panel { display: none; }
+.sheet.hybrid-view .hybrid-panel { display: block; }
+.sheet.hybrid-view .sheet-scroll { padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)); }
+.sheet.hybrid-view .breakdown { margin: 0 20px 28px; }
+.sheet.hybrid-view > .sheet-scroll > .days,
+.sheet.hybrid-view > .sheet-scroll > .chart-card,
+.sheet.hybrid-view > .sheet-scroll > .legend { display: none; }
+
+.hybrid-days {
+  display: flex;
+  gap: 4px;
+  padding: 0 20px 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+.hybrid-days::-webkit-scrollbar { display: none; }
+.hybrid-days button {
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 20px;
+  color: var(--ink);
+  background: var(--soft);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.hybrid-days button.active {
+  border-radius: 30px;
+  color: #fff;
+  background: var(--ink);
+  font-weight: 500;
+}
+.hybrid-days button:focus { outline: none; }
+
+.hybrid-day {
+  gap: 16px;
+  margin: 0 20px;
+  padding: 16px 20px;
+}
+.hybrid-copy {
+  min-height: 44px;
+  margin: 0;
+  padding-top: 4px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  font-feature-settings: "lnum" 1, "pnum" 1;
+}
+.hybrid-day .forecast-chart { padding: 8px 0 4px; }
+.hybrid-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: 8px 12px;
+  padding: 20px 24px 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+}
+.hybrid-legend span { min-width: 0; white-space: normal; }
+.hybrid-legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+}
+.hybrid-legend i.green { background: var(--green); }
+.hybrid-legend i.yellow { background: var(--yellow); }
+.hybrid-legend i.orange { background: var(--orange); }
+.hybrid-legend i.red { background: var(--red); }
+
 .days {
   display: flex;
   gap: 4px;
@@ -1499,6 +1578,7 @@ textarea,
 @media (max-width: 374px) {
   .forecast-list { margin: 0 16px; }
   .forecast-day { padding-right: 16px; padding-left: 16px; }
+  .hybrid-day { padding-right: 20px; padding-left: 20px; }
   .forecast-legend { grid-template-columns: 1fr; }
   .forecast-tooltip { width: min(287px, calc(100% - 1px)); }
 }
@@ -1598,6 +1678,7 @@ body.feedback-open .feedback-dimmer {
 .sheet.open .summary h1,
 .sheet.open .summary > p,
 .sheet.open .breakdown,
+.sheet.open .hybrid-panel,
 .sheet.open .days,
 .sheet.open .chart-card,
 .sheet.open .legend {
@@ -1606,6 +1687,7 @@ body.feedback-open .feedback-dimmer {
 .sheet.open .summary h1 { animation-delay: .05s; }
 .sheet.open .summary > p { animation-delay: .08s; }
 .sheet.open .breakdown { animation-delay: .11s; }
+.sheet.open .hybrid-panel { animation-delay: .14s; }
 .sheet.open .days { animation-delay: .14s; }
 .sheet.open .chart-card { animation-delay: .17s; }
 .sheet.open .legend { animation-delay: .2s; }
@@ -1620,6 +1702,7 @@ body.feedback-open .feedback-dimmer {
   .sheet.open .summary h1,
   .sheet.open .summary > p,
   .sheet.open .breakdown,
+  .sheet.open .hybrid-panel,
   .sheet.open .days,
   .sheet.open .chart-card,
   .sheet.open .legend { animation: none; }

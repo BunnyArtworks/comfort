@@ -24,6 +24,13 @@ const ratingControl = document.querySelector('.rating-control');
 const summary = document.querySelector('.summary');
 const legend = document.querySelector('.legend');
 const forecastList = document.querySelector('#forecast-list');
+const hybridPanel = document.querySelector('#hybrid-panel');
+const hybridDays = document.querySelector('#hybrid-days');
+const hybridDay = document.querySelector('#hybrid-day');
+const hybridChart = document.querySelector('#hybrid-chart');
+const hybridBars = document.querySelector('#hybrid-bars');
+const hybridTimes = document.querySelector('#hybrid-times');
+const hybridCopy = document.querySelector('#hybrid-copy');
 const ratingNote = document.querySelector('.rating-note');
 const feedbackForm = document.querySelector('.feedback-form');
 const feedbackDone = document.querySelector('.feedback-done');
@@ -33,6 +40,7 @@ const CURRENT_HOUR = 10;
 let condition = 'good';
 let selectedDay = 0;
 let selectedHour = null;
+let forecastMode = 'hybrid';
 let lockedScrollY = 0;
 let tooltipPositionFrame = 0;
 let forecastPointer = null;
@@ -456,6 +464,33 @@ function renderForecastList() {
   requestAnimationFrame(positionForecastTimeLabels);
 }
 
+function renderHybridChart() {
+  hideForecastTooltip(hybridDay);
+  const values = forecastValues[condition][selectedDay];
+  const day = forecastDays[selectedDay];
+  hybridDay.dataset.day = String(selectedDay);
+  hybridCopy.textContent = chartCopy[selectedDay]();
+  hybridChart.setAttribute('aria-label', `${day.title}: интерактивный почасовой график комфортности`);
+  hybridBars.innerHTML = values.map((value, hour) => `
+    <i class="forecast-bar" data-hour="${hour}" data-value="${value}"
+      style="height:${Math.max(28, Math.min(96, Math.round(value)))}px;--bar-color:${colorHex[color(value)]}"></i>
+  `).join('');
+  hybridTimes.innerHTML = [0, 6, 12, 18, 23].map(hour =>
+    `<span data-hour="${hour}">${hour}</span>`
+  ).join('');
+  requestAnimationFrame(positionHybridTimeLabels);
+}
+
+function positionHybridTimeLabels() {
+  const timelineRect = hybridTimes.getBoundingClientRect();
+  const dayBars = hybridBars.querySelectorAll('.forecast-bar');
+  hybridTimes.querySelectorAll('span').forEach(label => {
+    const bar = dayBars[Number(label.dataset.hour)];
+    if (!bar) return;
+    label.style.left = `${bar.getBoundingClientRect().left - timelineRect.left}px`;
+  });
+}
+
 function positionForecastTimeLabels() {
   forecastList.querySelectorAll('.forecast-day').forEach(card => {
     const timeline = card.querySelector('.forecast-times');
@@ -592,7 +627,7 @@ function showForecastTooltip(chart, clientX) {
   const tooltip = card.querySelector('.forecast-tooltip');
   const alreadySelected = Number(card.dataset.selectedHour) === hour;
 
-  forecastList.querySelectorAll('.forecast-day.is-interacting').forEach(other => {
+  sheet.querySelectorAll('.forecast-day.is-interacting').forEach(other => {
     if (other !== card) hideForecastTooltip(other);
   });
 
@@ -619,7 +654,7 @@ function showForecastTooltip(chart, clientX) {
 }
 
 function hideForecastTooltip(card = null) {
-  const cards = card ? [card] : [...forecastList.querySelectorAll('.forecast-day')];
+  const cards = card ? [card] : [...sheet.querySelectorAll('.forecast-day')];
   cards.forEach(dayCard => {
     dayCard.classList.remove('is-interacting');
     delete dayCard.dataset.selectedHour;
@@ -635,15 +670,24 @@ function hideForecastTooltip(card = null) {
   });
 }
 
-function setForecastListView(active) {
+function setForecastMode(mode) {
+  const nextMode = ['hybrid', 'classic', 'list'].includes(mode) ? mode : 'hybrid';
   hideForecastTooltip();
   forecastPointer = null;
   setBreakdownExpanded(false);
-  sheet.classList.toggle('forecast-list-view', active);
-  scoreGauge.setAttribute('aria-pressed', String(active));
-  forecastList.setAttribute('aria-hidden', String(!active));
+  forecastMode = nextMode;
+  sheet.classList.toggle('hybrid-view', nextMode === 'hybrid');
+  sheet.classList.toggle('classic-view', nextMode === 'classic');
+  sheet.classList.toggle('forecast-list-view', nextMode === 'list');
+  hybridPanel.setAttribute('aria-hidden', String(nextMode !== 'hybrid'));
+  forecastList.setAttribute('aria-hidden', String(nextMode !== 'list'));
+  scoreGauge.setAttribute('aria-pressed', String(nextMode !== 'hybrid'));
+  scoreGauge.dataset.forecastMode = nextMode;
+  scoreGauge.setAttribute('aria-label', `${conditions[condition].score} из 100. Формат прогноза: ${nextMode === 'hybrid' ? 'один день' : nextMode === 'classic' ? 'исходный график' : 'пять дней'}. Переключить формат`);
   sheetScroll.scrollTo({ top: 0, behavior: 'auto' });
-  if (!active) updateCompactSheetHeight();
+  if (nextMode === 'hybrid') renderHybridChart();
+  if (nextMode === 'classic') renderChart();
+  if (nextMode !== 'list') updateCompactSheetHeight();
   requestAnimationFrame(() => {
     updateSheetScrollMode();
     syncPanelUnderlay(sheet);
@@ -722,7 +766,7 @@ function renderCondition() {
   document.body.dataset.condition = condition;
   document.documentElement.dataset.condition = condition;
   scoreValue.textContent = data.score;
-  scoreGauge.setAttribute('aria-label', `${data.score} из 100. Переключить формат прогноза`);
+  scoreGauge.setAttribute('aria-label', `${data.score} из 100. Формат прогноза: ${forecastMode === 'hybrid' ? 'один день' : forecastMode === 'classic' ? 'исходный график' : 'пять дней'}. Переключить формат`);
   scoreGauge.style.setProperty('--score-color', data.scoreColor);
   scoreProgress.style.strokeDasharray = `${data.score} ${100 - data.score}`;
   document.querySelector('#sheet-title').textContent = data.title;
@@ -743,21 +787,23 @@ function renderCondition() {
   renderMainHourly();
   renderDayStrips();
   renderChart();
+  renderHybridChart();
   renderForecastList();
 }
 
 function selectDay(day) {
   selectedDay = day;
-  document.querySelectorAll('.days button').forEach(button => {
+  document.querySelectorAll('.days button, .hybrid-days button').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.day) === day);
   });
   renderChart();
+  renderHybridChart();
 }
 
 function toggleCondition() {
   condition = condition === 'good' ? 'bad' : 'good';
   selectedDay = 0;
-  document.querySelectorAll('.days button').forEach(button => {
+  document.querySelectorAll('.days button, .hybrid-days button').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.day) === 0);
   });
   renderCondition();
@@ -793,13 +839,14 @@ function hideOverlay() {
 
 function compactSheetContentHeight() {
   const scrollRect = sheetScroll.getBoundingClientRect();
-  const legendRect = legend.getBoundingClientRect();
+  const contentEnd = forecastMode === 'hybrid' ? hybridPanel : legend;
+  const contentEndRect = contentEnd.getBoundingClientRect();
   const paddingBottom = parseFloat(getComputedStyle(sheetScroll).paddingBottom) || 0;
-  return Math.ceil(legendRect.bottom - scrollRect.top + paddingBottom);
+  return Math.ceil(contentEndRect.bottom - scrollRect.top + paddingBottom);
 }
 
 function updateSheetScrollMode() {
-  if (sheet.classList.contains('forecast-list-view')) {
+  if (forecastMode === 'list') {
     sheetScroll.classList.add('can-scroll');
     sheet.classList.remove('surface-dismiss');
     return;
@@ -815,16 +862,16 @@ function updateSheetScrollMode() {
 }
 
 function updateCompactSheetHeight() {
-  if (sheet.classList.contains('expanded') || sheet.classList.contains('forecast-list-view')) return;
+  if (sheet.classList.contains('expanded') || forecastMode === 'list') return;
   sheet.style.setProperty('--compact-sheet-height', `${compactSheetContentHeight()}px`);
 }
 
 function openSheet() {
-  setForecastListView(true);
   selectedDay = 0;
-  document.querySelectorAll('.days button').forEach(button => {
+  document.querySelectorAll('.days button, .hybrid-days button').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.day) === 0);
   });
+  setForecastMode('hybrid');
   renderCondition();
   setBreakdownExpanded(false);
   updateCompactSheetHeight();
@@ -901,58 +948,16 @@ function closeSheet() {
 
 document.querySelectorAll('.mascot-toggle').forEach(button => button.addEventListener('click', toggleCondition));
 document.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', openSheet));
-document.querySelectorAll('.days button').forEach(button => button.addEventListener('click', () => selectDay(Number(button.dataset.day))));
+document.querySelectorAll('.days button, .hybrid-days button').forEach(button => button.addEventListener('click', () => selectDay(Number(button.dataset.day))));
 bars.addEventListener('click', event => {
   const bar = event.target.closest('.bar');
   if (!bar) return;
   showChartTooltip(Number(bar.dataset.hour));
 });
 scoreGauge.addEventListener('click', () => {
-  setForecastListView(!sheet.classList.contains('forecast-list-view'));
-});
-
-forecastList.addEventListener('pointerdown', event => {
-  const chart = event.target.closest('.forecast-chart');
-  if (!chart || (event.pointerType === 'mouse' && event.button !== 0)) return;
-  forecastPointer = {
-    id: event.pointerId,
-    type: event.pointerType,
-    chart,
-    startX: event.clientX,
-    startY: event.clientY,
-    dragging: event.pointerType === 'mouse'
-  };
-  showForecastTooltip(chart, event.clientX);
-});
-
-forecastList.addEventListener('pointermove', event => {
-  const hoveredChart = event.target.closest('.forecast-chart');
-  if (event.pointerType === 'mouse' && (!forecastPointer || forecastPointer.id !== event.pointerId)) {
-    if (hoveredChart) showForecastTooltip(hoveredChart, event.clientX);
-    return;
-  }
-  if (!forecastPointer || forecastPointer.id !== event.pointerId) return;
-  const deltaX = event.clientX - forecastPointer.startX;
-  const deltaY = event.clientY - forecastPointer.startY;
-  if (!forecastPointer.dragging) {
-    if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) return;
-    if (Math.abs(deltaY) > Math.abs(deltaX)) {
-      hideForecastTooltip(forecastPointer.chart.closest('.forecast-day'));
-      forecastPointer = null;
-      return;
-    }
-    forecastPointer.dragging = true;
-    try { forecastPointer.chart.setPointerCapture(event.pointerId); } catch {}
-  }
-  showForecastTooltip(forecastPointer.chart, event.clientX);
-  event.preventDefault();
-}, { passive: false });
-
-forecastList.addEventListener('pointerout', event => {
-  if (event.pointerType !== 'mouse' || forecastPointer) return;
-  const chart = event.target.closest('.forecast-chart');
-  if (!chart || chart.contains(event.relatedTarget)) return;
-  hideForecastTooltip(chart.closest('.forecast-day'));
+  const modes = ['hybrid', 'classic', 'list'];
+  const currentIndex = modes.indexOf(forecastMode);
+  setForecastMode(modes[(currentIndex + 1) % modes.length]);
 });
 
 const finishForecastPointer = event => {
@@ -966,14 +971,64 @@ const finishForecastPointer = event => {
     forecastHideTimer = window.setTimeout(() => hideForecastTooltip(chart.closest('.forecast-day')), 420);
   }
 };
-forecastList.addEventListener('pointerup', finishForecastPointer);
-forecastList.addEventListener('pointercancel', event => {
-  finishForecastPointer(event);
-  hideForecastTooltip();
-});
+
+function bindForecastInteractions(container) {
+  container.addEventListener('pointerdown', event => {
+    const chart = event.target.closest('.forecast-chart');
+    if (!chart || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    forecastPointer = {
+      id: event.pointerId,
+      type: event.pointerType,
+      chart,
+      startX: event.clientX,
+      startY: event.clientY,
+      dragging: event.pointerType === 'mouse'
+    };
+    showForecastTooltip(chart, event.clientX);
+  });
+
+  container.addEventListener('pointermove', event => {
+    const hoveredChart = event.target.closest('.forecast-chart');
+    if (event.pointerType === 'mouse' && (!forecastPointer || forecastPointer.id !== event.pointerId)) {
+      if (hoveredChart) showForecastTooltip(hoveredChart, event.clientX);
+      return;
+    }
+    if (!forecastPointer || forecastPointer.id !== event.pointerId) return;
+    const deltaX = event.clientX - forecastPointer.startX;
+    const deltaY = event.clientY - forecastPointer.startY;
+    if (!forecastPointer.dragging) {
+      if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) return;
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        hideForecastTooltip(forecastPointer.chart.closest('.forecast-day'));
+        forecastPointer = null;
+        return;
+      }
+      forecastPointer.dragging = true;
+      try { forecastPointer.chart.setPointerCapture(event.pointerId); } catch {}
+    }
+    showForecastTooltip(forecastPointer.chart, event.clientX);
+    event.preventDefault();
+  }, { passive: false });
+
+  container.addEventListener('pointerout', event => {
+    if (event.pointerType !== 'mouse' || forecastPointer) return;
+    const chart = event.target.closest('.forecast-chart');
+    if (!chart || chart.contains(event.relatedTarget)) return;
+    hideForecastTooltip(chart.closest('.forecast-day'));
+  });
+
+  container.addEventListener('pointerup', finishForecastPointer);
+  container.addEventListener('pointercancel', event => {
+    finishForecastPointer(event);
+    hideForecastTooltip();
+  });
+}
+
+bindForecastInteractions(forecastList);
+bindForecastInteractions(hybridPanel);
 plotScroll.addEventListener('scroll', positionChartTooltip, { passive: true });
 sheetScroll.addEventListener('scroll', () => {
-  if (sheet.classList.contains('forecast-list-view')) hideForecastTooltip();
+  if (forecastMode !== 'classic') hideForecastTooltip();
 }, { passive: true });
 document.addEventListener('pointerdown', event => {
   if (selectedHour === null || event.target.closest('.bar')) return;
@@ -1102,6 +1157,7 @@ window.addEventListener('resize', () => {
   updateCompactSheetHeight();
   updateSheetScrollMode();
   requestAnimationFrame(positionForecastTimeLabels);
+  requestAnimationFrame(positionHybridTimeLabels);
   syncOpenUnderlays();
   positionChartTooltip();
 });
@@ -1116,6 +1172,7 @@ if ('ResizeObserver' in window) {
 window.visualViewport?.addEventListener('resize', syncOpenUnderlays);
 window.visualViewport?.addEventListener('scroll', syncOpenUnderlays);
 document.fonts?.ready.then(() => {
+  positionHybridTimeLabels();
   updateCompactSheetHeight();
   updateSheetScrollMode();
 });

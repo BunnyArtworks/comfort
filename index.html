@@ -11,7 +11,7 @@
   <link rel="preload" href="assets/ys-text-bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/ys-text-heavy.woff2" as="font" type="font/woff2" crossorigin>
   <title>Погода — индекс комфортности</title>
-  <link rel="stylesheet" href="style.css?v=20260925-11">
+  <link rel="stylesheet" href="style.css?v=20260925-12">
 </head>
 <body>
   <main class="phone" id="app" data-condition="good">
@@ -218,7 +218,7 @@
 
     <div class="overlay" hidden></div>
     <div class="sheet-underlay" aria-hidden="true" hidden></div>
-    <aside class="sheet" aria-hidden="true" aria-label="Индекс комфортности">
+    <aside class="sheet hybrid-view" aria-hidden="true" aria-label="Индекс комфортности">
       <div class="grabber"></div>
       <div class="sheet-scroll">
         <section class="summary">
@@ -257,6 +257,41 @@
             <span class="breakdown-open-label">Из чего складывается оценка <img src="assets/chevron-down.svg" alt=""></span>
             <span class="breakdown-close-label">Свернуть <img src="assets/chevron-up.svg" alt=""></span>
           </button>
+        </section>
+
+        <section class="hybrid-panel" id="hybrid-panel" aria-label="Прогноз комфортности на выбранный день">
+          <nav class="hybrid-days" id="hybrid-days" aria-label="Дни прогноза">
+            <button class="active" type="button" data-day="0">Сегодня</button>
+            <button type="button" data-day="1">Завтра</button>
+            <button type="button" data-day="2">Ср, 17</button>
+            <button type="button" data-day="3">Чт, 18</button>
+            <button type="button" data-day="4">Пт, 19</button>
+          </nav>
+
+          <article class="forecast-day hybrid-day" id="hybrid-day" data-day="0">
+            <p class="hybrid-copy" id="hybrid-copy">Комфортно до 11:00, после этого условия ухудшатся из-за грозы до 21:00</p>
+            <div class="forecast-chart" id="hybrid-chart" aria-label="Сегодня: интерактивный почасовой график комфортности">
+              <div class="forecast-bars" id="hybrid-bars"></div>
+              <div class="forecast-times" id="hybrid-times" aria-hidden="true"></div>
+            </div>
+            <div class="forecast-tooltip-layer" aria-hidden="true">
+              <div class="forecast-tooltip" role="tooltip" aria-hidden="true">
+                <div class="forecast-tooltip-head">
+                  <span class="forecast-tooltip-hour">11:00</span>
+                  <span class="forecast-tooltip-score"><b>64</b><small>/100</small><i></i></span>
+                </div>
+                <div class="forecast-tooltip-chips"></div>
+              </div>
+              <svg class="forecast-tooltip-connector" viewBox="0 0 353 120" preserveAspectRatio="none" aria-hidden="true"><path></path></svg>
+            </div>
+          </article>
+
+          <section class="hybrid-legend" aria-label="Легенда индекса">
+            <span><i class="green"></i>80–100, комфортно</span>
+            <span><i class="yellow"></i>50–79, нормально</span>
+            <span><i class="orange"></i>30–49, неприятно</span>
+            <span><i class="red"></i>0–29, лучше дома</span>
+          </section>
         </section>
 
         <nav class="days" aria-label="Дни прогноза">
@@ -320,6 +355,6 @@
       </aside>
     </aside>
   </main>
-  <script src="app.js?v=20260925-10"></script>
+  <script src="app.js?v=20260925-11"></script>
 </body>
 </html>
