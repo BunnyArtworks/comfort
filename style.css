@@ -706,23 +706,12 @@ textarea,
 }
 .moon-gauge i {
   position: absolute;
-  top: -6.43px;
-  right: -15px;
+  inset: 0;
   display: block;
-  width: 60.61px;
-  height: 72.86px;
-  overflow: visible;
-  -webkit-mask-image: url("assets/moon-mask-exact.svg");
-  -webkit-mask-position: -72.391px -47.572px;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-size: 176px 176px;
-  mask-image: url("assets/moon-mask-exact.svg");
-  mask-position: -72.391px -47.572px;
-  mask-repeat: no-repeat;
-  mask-size: 176px 176px;
-  transform: scaleX(-1);
+  width: 60px;
+  height: 60px;
 }
-.moon-gauge img { position: absolute; top: -8px; left: -8px; width: 76.609px; height: 88.857px; }
+.moon-gauge img { display: block; width: 60px; height: 60px; }
 .water .gauge-fill { width: 62.836px; height: 53.132px; }
 .water .gauge-dot { top: 26.67px; left: 58.66px; }
 .water b { margin-top: -8px; }
