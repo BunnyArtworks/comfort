@@ -11,7 +11,7 @@
   <link rel="preload" href="assets/ys-text-bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/ys-text-heavy.woff2" as="font" type="font/woff2" crossorigin>
   <title>Погода — индекс комфортности</title>
-  <link rel="stylesheet" href="style.css?v=20260925-12">
+  <link rel="stylesheet" href="style.css?v=20260925-13">
 </head>
 <body>
   <main class="phone" id="app" data-condition="good">
@@ -222,6 +222,41 @@
       <div class="grabber"></div>
       <div class="sheet-scroll">
         <section class="summary">
+          <div class="comfort-flower" id="comfort-flower" role="group" aria-label="Составляющие индекса комфортности">
+            <div class="flower-stage">
+              <button class="flower-petal petal-temperature" type="button" data-flower-part="temperature" aria-pressed="false">
+                <img class="flower-petal-image" src="assets/flower-good-temperature.svg" alt="">
+                <img class="flower-petal-icon" src="assets/flower-icon-temperature-good.svg" alt="">
+              </button>
+              <button class="flower-petal petal-wind" type="button" data-flower-part="wind" aria-pressed="false">
+                <img class="flower-petal-image" src="assets/flower-good-wind.svg" alt="">
+                <img class="flower-petal-icon" src="assets/flower-icon-wind-good.svg" alt="">
+              </button>
+              <button class="flower-petal petal-rain" type="button" data-flower-part="rain" aria-pressed="false">
+                <img class="flower-petal-image" src="assets/flower-good-rain.svg" alt="">
+                <img class="flower-petal-icon" src="assets/flower-icon-rain-good.svg" alt="">
+              </button>
+              <button class="flower-petal petal-danger" type="button" data-flower-part="danger" aria-pressed="false">
+                <img class="flower-petal-image" src="assets/flower-good-danger.svg" alt="">
+                <img class="flower-petal-icon" src="assets/flower-icon-danger-good.svg" alt="">
+              </button>
+              <button class="flower-petal petal-uv" type="button" data-flower-part="uv" aria-pressed="false">
+                <img class="flower-petal-image" src="assets/flower-good-uv.svg" alt="">
+                <img class="flower-petal-icon" src="assets/flower-icon-uv-good.svg" alt="">
+              </button>
+
+              <button class="flower-center" id="flower-score-toggle" type="button" aria-label="96 из 100. Переключить формат прогноза">
+                <strong id="flower-score-value">96</strong>
+                <small><i aria-hidden="true"></i>из 100</small>
+              </button>
+
+              <div class="flower-tooltip" id="flower-tooltip" role="tooltip" aria-live="polite" aria-hidden="true" data-anchor="uv">
+                <img src="assets/flower-tooltip-tail.svg" alt="">
+                <p></p>
+              </div>
+            </div>
+          </div>
+
           <button class="score-gauge" id="score-gauge" type="button" aria-label="96 из 100. Переключить формат прогноза" aria-pressed="false">
             <span class="score-exact score-exact-good" aria-hidden="true">
               <img src="assets/score-track-figma.svg" alt="">
@@ -355,6 +390,6 @@
       </aside>
     </aside>
   </main>
-  <script src="app.js?v=20260925-11"></script>
+  <script src="app.js?v=20260925-12"></script>
 </body>
 </html>
