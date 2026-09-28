@@ -40,7 +40,7 @@ const CURRENT_HOUR = 10;
 let condition = 'good';
 let selectedDay = 0;
 let selectedHour = null;
-let forecastMode = 'list';
+let forecastMode = 'hybrid';
 let lockedScrollY = 0;
 let tooltipPositionFrame = 0;
 let forecastPointer = null;
@@ -206,20 +206,34 @@ const fullDays = [
   [58, 55, 52, 50, 54, 60, 68, 75, 81, 85, 87, 84, 80, 77, 73, 69, 65, 62, 64, 68, 72, 70, 66, 62]
 ];
 
+function threeHourForecast(bucketValues) {
+  return bucketValues.flatMap(value => [value, value, value]);
+}
+
 const forecastValues = {
   good: [
     todayGood,
     [92, 91, 90, 88, 86, 84, 82, 82, 80, 76, 72, 70, 70, 70, 74, 78, 82, 85, 90, 92, 93, 91, 88, 86],
-    [94, 95, 94, 93, 92, 90, 88, 87, 86, 86, 86, 87, 90, 92, 94, 95, 94, 93, 92, 91, 90, 87, 86, 85],
-    [88, 86, 84, 70, 66, 62, 56, 48, 40, 34, 30, 28, 26, 30, 38, 46, 54, 60, 64, 68, 76, 82, 84, 83],
-    [90, 90, 89, 88, 88, 86, 84, 80, 76, 70, 66, 60, 56, 52, 50, 52, 58, 64, 70, 74, 78, 86, 88, 89]
+    threeHourForecast([94, 93, 88, 86, 90, 95, 92, 86]),
+    threeHourForecast([88, 70, 56, 34, 26, 46, 64, 82]),
+    threeHourForecast([90, 88, 84, 70, 56, 52, 70, 86]),
+    threeHourForecast([84, 82, 80, 76, 72, 76, 82, 86]),
+    threeHourForecast([72, 70, 66, 58, 52, 58, 68, 76]),
+    threeHourForecast([92, 93, 92, 90, 88, 87, 89, 91]),
+    threeHourForecast([68, 64, 58, 46, 40, 48, 58, 66]),
+    threeHourForecast([80, 82, 84, 78, 72, 70, 76, 82])
   ],
   bad: [
     todayBad,
     [62, 60, 58, 56, 54, 52, 50, 48, 44, 40, 36, 34, 32, 34, 38, 44, 52, 60, 68, 74, 78, 76, 70, 66],
-    [76, 78, 80, 82, 84, 86, 84, 82, 80, 78, 76, 74, 76, 80, 84, 86, 88, 86, 84, 82, 80, 78, 76, 74],
-    [44, 42, 40, 36, 32, 28, 24, 22, 20, 18, 18, 20, 24, 28, 34, 40, 46, 52, 58, 64, 70, 74, 72, 68],
-    [68, 70, 72, 74, 72, 68, 64, 58, 52, 48, 42, 38, 34, 36, 42, 48, 54, 62, 68, 74, 80, 82, 78, 74]
+    threeHourForecast([76, 82, 84, 78, 76, 86, 84, 76]),
+    threeHourForecast([44, 36, 24, 18, 24, 40, 58, 72]),
+    threeHourForecast([68, 74, 64, 48, 34, 48, 68, 80]),
+    threeHourForecast([52, 48, 44, 38, 32, 42, 56, 66]),
+    threeHourForecast([82, 84, 82, 78, 72, 70, 76, 80]),
+    threeHourForecast([34, 30, 26, 24, 28, 36, 48, 56]),
+    threeHourForecast([76, 78, 74, 66, 58, 60, 70, 76]),
+    threeHourForecast([58, 62, 66, 60, 52, 50, 58, 64])
   ]
 };
 
@@ -235,19 +249,44 @@ const forecastDays = [
     bad: 'Для прогулки лучше выбрать время после 18:00'
   },
   {
-    title: '14 августа, ср',
+    title: '17 августа, ср',
     good: 'Почти лучший день в году — можно гулять без плана',
     bad: 'Самый приятный день недели — комфортно почти весь день'
   },
   {
-    title: '15 августа, чт',
+    title: '18 августа, чт',
     good: 'Для прогулки лучше выбрать время после 21:00',
     bad: 'День для уютных планов — спокойнее станет после 18:00'
   },
   {
-    title: '16 августа, пт',
+    title: '19 августа, пт',
     good: 'Комфортно до 8:00 и снова после 21:00',
     bad: 'Для прогулки лучше выбрать время до 9:00 или после 18:00'
+  },
+  {
+    title: '20 августа, сб',
+    good: 'Комфортный день — особенно приятно утром и после 18:00',
+    bad: 'Для прогулки лучше выбрать поздний вечер после 21:00'
+  },
+  {
+    title: '21 августа, вс',
+    good: 'Лучшее окно для долгой прогулки — после 18:00',
+    bad: 'Почти весь день комфортно, удобнее всего до 9:00'
+  },
+  {
+    title: '22 августа, пн',
+    good: 'Почти лучший день в году — комфортно с утра до ночи',
+    bad: 'День для коротких выходов — лучше после 21:00'
+  },
+  {
+    title: '23 августа, вт',
+    good: 'Для прогулки лучше выбрать утро до 9:00 или поздний вечер',
+    bad: 'Комфортнее всего утром до 9:00 и вечером после 18:00'
+  },
+  {
+    title: '24 августа, ср',
+    good: 'Комфортно до 9:00 и снова после 21:00',
+    bad: 'Спокойный день — лучшее время для улицы после 18:00'
   }
 ];
 
@@ -255,10 +294,33 @@ const chartCopy = [
   () => condition === 'good'
     ? 'Комфортно до 11:00, после этого условия ухудшатся из-за грозы до 21:00'
     : 'Комфортное окно для выхода на улицу с 18:00 до 22:00',
-  () => 'Комфортно ранним утром до 10:00 и вечером с 21:00',
-  () => 'Комфортное окно для прогулки с 10:00 до 15:00',
-  () => 'Комфортно с 1:00 до 7:00 и поздним вечером с 22:00',
-  () => 'Лучшее время для выхода на улицу — с 8:00 до 13:00'
+  () => condition === 'good'
+    ? 'Комфортно до 9:00 и снова после 18:00'
+    : 'Наиболее подходящее время для выхода — после 18:00',
+  () => condition === 'good'
+    ? 'Почти лучший день в году — комфортно с утра до ночи'
+    : 'Комфортнее всего с 3:00 до 9:00 и с 15:00 до 21:00',
+  () => condition === 'good'
+    ? 'Лучшее время для прогулки — до 3:00 и после 21:00'
+    : 'Наиболее подходящее время для выхода — после 18:00',
+  () => condition === 'good'
+    ? 'Комфортно до 9:00 и снова после 21:00'
+    : 'Лучшее время для выхода — до 9:00 или после 21:00',
+  () => condition === 'good'
+    ? 'Комфортно до 9:00 и снова после 18:00'
+    : 'Наиболее подходящее время — до 3:00 и после 18:00',
+  () => condition === 'good'
+    ? 'Наиболее подходящее время для выхода — после 21:00'
+    : 'Комфортно до 9:00 и снова после 21:00',
+  () => condition === 'good'
+    ? 'Почти лучший день в году — комфортно с утра до ночи'
+    : 'Лучшее время для выхода — после 21:00',
+  () => condition === 'good'
+    ? 'Наиболее подходящее время — до 9:00 и после 18:00'
+    : 'Спокойный день — условия почти не меняются',
+  () => condition === 'good'
+    ? 'Комфортно до 9:00 и снова после 21:00'
+    : 'Наиболее подходящее время — до 9:00 и после 18:00'
 ];
 
 const colorHex = {
@@ -428,7 +490,7 @@ function forecastLegendMarkup() {
 
 function renderForecastList() {
   const days = forecastValues[condition];
-  forecastList.innerHTML = forecastDays.map((day, dayIndex) => {
+  forecastList.innerHTML = forecastDays.slice(0, 5).map((day, dayIndex) => {
     const values = days[dayIndex];
     const barsMarkup = values.map((value, hour) => `
       <i class="forecast-bar" data-hour="${hour}" data-value="${value}"
@@ -470,7 +532,7 @@ function renderHybridChart() {
   const day = forecastDays[selectedDay];
   hybridDay.dataset.day = String(selectedDay);
   hybridCopy.textContent = chartCopy[selectedDay]();
-  hybridChart.setAttribute('aria-label', `${day.title}: интерактивный почасовой график комфортности`);
+  hybridChart.setAttribute('aria-label', `${day.title}: интерактивный ${selectedDay >= 2 ? 'трёхчасовой' : 'почасовой'} график комфортности`);
   hybridBars.innerHTML = values.map((value, hour) => `
     <i class="forecast-bar" data-hour="${hour}" data-value="${value}"
       style="height:${Math.max(28, Math.min(96, Math.round(value)))}px;--bar-color:${colorHex[color(value)]}"></i>
@@ -518,7 +580,8 @@ function forecastChip(icon, text, tone, extraClass = '') {
 }
 
 function forecastTooltipData(day, hour, value) {
-  const details = tooltipDetails(day, hour, value);
+  const forecastHour = day >= 2 ? Math.floor(hour / 3) * 3 : hour;
+  const details = tooltipDetails(day, forecastHour, value);
   const feels = details[0][0];
   const wind = details[1][0];
   const rain = details[2][0];
@@ -681,10 +744,16 @@ function hideForecastTooltip(card = null) {
 }
 
 function setForecastMode(mode) {
-  const nextMode = ['list', 'hybrid', 'classic'].includes(mode) ? mode : 'list';
+  const nextMode = ['hybrid', 'classic', 'list'].includes(mode) ? mode : 'hybrid';
   hideForecastTooltip();
   forecastPointer = null;
   setBreakdownExpanded(false);
+  if (nextMode === 'classic' && selectedDay > 4) {
+    selectedDay = 0;
+    document.querySelectorAll('.days button, .hybrid-days button').forEach(button => {
+      button.classList.toggle('active', Number(button.dataset.day) === 0);
+    });
+  }
   forecastMode = nextMode;
   sheet.classList.toggle('hybrid-view', nextMode === 'hybrid');
   sheet.classList.toggle('classic-view', nextMode === 'classic');
@@ -807,7 +876,7 @@ function selectDay(day) {
   document.querySelectorAll('.days button, .hybrid-days button').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.day) === day);
   });
-  renderChart();
+  if (day <= 4) renderChart();
   renderHybridChart();
 }
 
@@ -882,7 +951,7 @@ function openSheet() {
   document.querySelectorAll('.days button, .hybrid-days button').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.day) === 0);
   });
-  setForecastMode('list');
+  setForecastMode('hybrid');
   renderCondition();
   setBreakdownExpanded(false);
   updateCompactSheetHeight();
@@ -966,7 +1035,7 @@ bars.addEventListener('click', event => {
   showChartTooltip(Number(bar.dataset.hour));
 });
 scoreGauge.addEventListener('click', () => {
-  const modes = ['list', 'hybrid', 'classic'];
+  const modes = ['hybrid', 'classic', 'list'];
   const currentIndex = modes.indexOf(forecastMode);
   setForecastMode(modes[(currentIndex + 1) % modes.length]);
 });
